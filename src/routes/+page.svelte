@@ -26,7 +26,7 @@
         };
     });
 
-    let personForm: PersonForm | undefined;
+    let personForm: PersonForm;
     let showGroups = false;
 
     function startGroupGeneration() {

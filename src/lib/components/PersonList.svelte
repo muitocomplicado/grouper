@@ -5,9 +5,13 @@
 
     function removePerson(id: string) {
         people.update(p => p.filter(person => person.id !== id));
+        if (personForm) {
+            personForm.resetForm();
+        }
     }
 
-    export let personForm: { editPerson: (person: Person) => void } | undefined;
+    import type PersonForm from './PersonForm.svelte';
+    export let personForm: PersonForm | undefined;
 
     function handlePersonClick(person: Person) {
         if (personForm) {

@@ -42,7 +42,7 @@
         isLeader = person.isLeader;
     }
 
-    function resetForm() {
+    export function resetForm() {
         editingPerson = null;
         name = '';
         // Restore previous state
