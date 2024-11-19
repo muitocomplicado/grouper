@@ -136,6 +136,8 @@
             bind:this={nameInput}
             placeholder="Nome"
             autocomplete="off"
+            autocapitalize="sentences"
+            spellcheck="false"
             on:focus={() => isNameFocused = true}
             on:blur={() => isNameFocused = false}
             class="flex-1 min-w-0 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
