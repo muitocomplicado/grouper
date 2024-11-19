@@ -5,7 +5,7 @@
     import { nanoid } from 'nanoid';
 
     function capitalizeWords(str: string): string {
-        return str.replace(/\b\w/g, letter => letter.toUpperCase());
+        return str.replace(/(?:^|\s)\S/g, letter => letter.toUpperCase());
     }
 
     function getNextFamilyNumber(currentPeople: Person[]): number {
