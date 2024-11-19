@@ -17,9 +17,6 @@ const config = {
 			// Enable strict mode for better error checking
 			strict: true
 		}),
-		paths: {
-			base: '/grouper'
-		},
 		prerender: {
 			entries: ['/']
 		}
