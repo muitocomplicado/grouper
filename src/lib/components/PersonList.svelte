@@ -1,0 +1,57 @@
+<script lang="ts">
+    import { people } from '$lib/stores';
+    import type { Person } from '$lib/types';
+    import { getFamilyNumberColor } from '$lib/utils/colors';
+
+    function removePerson(id: string) {
+        people.update(p => p.filter(person => person.id !== id));
+    }
+
+    export let personForm: { editPerson: (person: Person) => void } | undefined;
+
+    function handlePersonClick(person: Person) {
+        if (personForm) {
+            personForm.editPerson(person);
+        }
+    }
+</script>
+
+<div class="space-y-1 pb-2">
+    {#each [...$people].sort((a, b) => {
+        if (a.isLeader && !b.isLeader) return -1;
+        if (!a.isLeader && b.isLeader) return 1;
+        return a.name.localeCompare(b.name);
+    }) as person (person.id)}
+        <div
+            class="flex items-center justify-between py-1.5 px-2 bg-white rounded shadow-sm cursor-pointer hover:bg-gray-100"
+            on:click={() => handlePersonClick(person)}
+        >
+            <div class="flex-1 flex items-center gap-3">
+                <span class={`font-medium whitespace-nowrap ${person.isLeader ? 'text-green-600' : ''}`}>{person.name}</span>
+
+                <span class={`font-mono font-bold ${person.gender === 'M' ? 'text-blue-700' : 'text-fuchsia-500'}`}>
+                    {person.gender}
+                </span>
+
+            </div>
+
+            {#if person.familyNumber !== undefined && person.familyNumber > 0}
+                <span
+                    class="px-2 py-1 text-xs rounded font-mono mr-2"
+                    style={`background-color: ${getFamilyNumberColor(person.familyNumber)}`}
+                >
+                    {person.familyNumber}
+                </span>
+            {/if}
+
+            <button
+                on:click|stopPropagation={() => removePerson(person.id)}
+                class="p-2 text-red-600 hover:bg-red-50 rounded"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+    {/each}
+</div>
