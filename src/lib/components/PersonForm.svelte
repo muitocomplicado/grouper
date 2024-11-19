@@ -51,20 +51,6 @@
         isLeader = previousState.isLeader;
     }
 
-    function decrementFamilyNumber() {
-        const currentNum = parseInt(familyNumber) || 0;
-        if (currentNum > 0) {
-            familyNumber = (currentNum - 1).toString();
-            if (familyNumber === '0') familyNumber = '';
-        }
-    }
-
-    function incrementFamilyNumber() {
-        const currentNum = parseInt(familyNumber) || 0;
-        if (currentNum < 99) {
-            familyNumber = (currentNum + 1).toString();
-        }
-    }
 
     function handleFamilyNumberInput(event: Event) {
         const input = event.target as HTMLInputElement;
@@ -171,33 +157,15 @@
             <span class="font-mono font-bold">{isLeader ? 'L' : '*'}</span>
         </button>
 
-        <div class="flex items-center">
-            <button
-                type="button"
-                on:click={decrementFamilyNumber}
-                class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-l border border-r-0 dark:border-gray-600 dark:text-white"
-                aria-label="Diminuir número da família"
-            >
-                -
-            </button>
-            <input
-                type="text"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                bind:value={familyNumber}
-                on:input={handleFamilyNumberInput}
-                autocomplete="off"
-                class="w-10 px-2 py-2 border-y text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-            <button
-                type="button"
-                on:click={incrementFamilyNumber}
-                class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-r border border-l-0 dark:border-gray-600 dark:text-white"
-                aria-label="Aumentar número da família"
-            >
-                +
-            </button>
-        </div>
+        <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            bind:value={familyNumber}
+            on:input={handleFamilyNumberInput}
+            autocomplete="off"
+            class="w-16 px-2 py-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
     </div>
 
     <div class="flex gap-2">
