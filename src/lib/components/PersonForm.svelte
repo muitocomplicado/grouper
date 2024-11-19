@@ -4,6 +4,20 @@
     import type { Person } from '$lib/types';
     import { nanoid } from 'nanoid';
 
+    function capitalizeWords(str: string): string {
+        return str.replace(/\b\w/g, letter => letter.toUpperCase());
+    }
+
+    function getNextFamilyNumber(currentPeople: Person[]): number {
+        const usedNumbers = currentPeople
+            .map(p => p.familyNumber || 0)
+            .filter(n => n > 0);
+        
+        if (usedNumbers.length === 0) return 1;
+        
+        return Math.max(...usedNumbers) + 1;
+    }
+
     let nameInput: HTMLInputElement;
 
     let editingPerson: Person | null = null;
@@ -133,6 +147,16 @@
         <input
             type="text"
             bind:value={name}
+            on:input={(e) => {
+                const input = e.target as HTMLInputElement;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                name = capitalizeWords(input.value);
+                // Restore cursor position
+                setTimeout(() => {
+                    input.setSelectionRange(start, end);
+                }, 0);
+            }}
             bind:this={nameInput}
             placeholder="Nome"
             autocomplete="off"
@@ -173,6 +197,17 @@
             pattern="[0-9]*"
             bind:value={familyNumber}
             on:input={handleFamilyNumberInput}
+            on:click={(e) => {
+                if (!familyNumber) {
+                    familyNumber = getNextFamilyNumber($people).toString();
+                } else {
+                    familyNumber = '';
+                }
+                // Use setTimeout to ensure the value is updated before selecting
+                setTimeout(() => {
+                    (e.target as HTMLInputElement).select();
+                }, 0);
+            }}
             autocomplete="off"
             class="w-12 px-2 py-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
