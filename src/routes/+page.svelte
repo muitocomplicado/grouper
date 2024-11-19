@@ -8,8 +8,25 @@
     import { people } from '$lib/stores';
     import { goto } from '$app/navigation';
 
-    let personForm: PersonForm | undefined;
+    import { onMount } from 'svelte';
+    let isKeyboardOpen = false;
+    let initialWindowHeight;
 
+    onMount(() => {
+        initialWindowHeight = window.innerHeight;
+        const checkKeyboard = () => {
+            // If window height is significantly smaller than initial height,
+            // keyboard is likely open (using 150px as threshold)
+            isKeyboardOpen = window.innerHeight < initialWindowHeight - 150;
+        };
+
+        window.addEventListener('resize', checkKeyboard);
+        return () => {
+            window.removeEventListener('resize', checkKeyboard);
+        };
+    });
+
+    let personForm: PersonForm | undefined;
     let showGroups = false;
 
     function startGroupGeneration() {
@@ -36,6 +53,7 @@
             </div>
         </div>
 
+        {#if !isKeyboardOpen}
         <div class="sticky bottom-0 pt-4 pb-4 bg-white dark:bg-gray-900">
             <button
                 on:click={startGroupGeneration}
@@ -50,6 +68,7 @@
                 {/if}
             </button>
         </div>
+        {/if}
     </div>
 {:else}
     <div class="h-screen flex flex-col">
@@ -62,9 +81,11 @@
                     <GroupDisplay />
                 </div>
             </div>
+            {#if !isKeyboardOpen}
             <div class="sticky bottom-0 pt-4 pb-4 bg-white dark:bg-gray-900">
                 <CopyGroupsFooter />
             </div>
+            {/if}
         </div>
     </div>
 {/if}
