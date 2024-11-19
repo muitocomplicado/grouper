@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { groups } from '$lib/stores';
+    import { groups, groupSettings } from '$lib/stores';
     import { formatGroupsAsText } from '$lib/utils/formatGroups';
 
     let buttonText = "Copiar Grupos";
 
     async function copyGroupsToClipboard() {
-        const text = formatGroupsAsText($groups);
+        const text = formatGroupsAsText($groups, $groupSettings.requireLeader);
         try {
             await navigator.clipboard.writeText(text);
             buttonText = "Copiado";
