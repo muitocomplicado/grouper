@@ -4,12 +4,15 @@
     import type { Person } from '$lib/types';
     import { nanoid } from 'nanoid';
 
+    let nameInput: HTMLInputElement;
+
     let editingPerson: Person | null = null;
     let name = '';
     let gender: 'M' | 'F' = 'M';
     let familyNumber: string = '';
     let isLeader = false;
     let hasDuplicate = false;
+    let isNameFocused = false;
 
     $: {
         const trimmedName = name.trim();
@@ -49,6 +52,7 @@
         gender = previousState.gender;
         familyNumber = previousState.familyNumber;
         isLeader = previousState.isLeader;
+        nameInput?.blur();
     }
 
 
@@ -105,6 +109,7 @@
             };
             people.update(p => [...p, newPerson]);
             name = '';
+            nameInput?.focus();
         }
     }
 
@@ -124,12 +129,15 @@
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-    <div class="flex items-center gap-2 mb-4">
+    <div class="flex items-center gap-2">
         <input
             type="text"
             bind:value={name}
+            bind:this={nameInput}
             placeholder="Nome"
             autocomplete="off"
+            on:focus={() => isNameFocused = true}
+            on:blur={() => isNameFocused = false}
             class="flex-1 min-w-0 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
 
@@ -168,19 +176,19 @@
         />
     </div>
 
-    <div class="flex gap-2">
-        <button
-            type="submit"
-            class={`flex-1 px-6 py-3 text-white rounded-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed font-bold ${
-                editingPerson ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-            disabled={hasDuplicate}
-            title={hasDuplicate ? 'Este nome já existe' : ''}
-        >
-            {editingPerson ? 'Atualizar' : 'Adicionar'}
-        </button>
+    {#if isNameFocused || editingPerson || name.trim()}
+        <div class="flex gap-2 mt-4">
+            <button
+                type="submit"
+                class={`flex-1 px-6 py-3 text-white rounded-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed font-bold ${
+                    editingPerson ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                disabled={hasDuplicate}
+                title={hasDuplicate ? 'Este nome já existe' : ''}
+            >
+                {editingPerson ? 'Atualizar' : 'Adicionar'}
+            </button>
 
-        {#if editingPerson}
             <button
                 type="button"
                 on:click={resetForm}
@@ -188,6 +196,6 @@
             >
                 Cancelar
             </button>
-        {/if}
-    </div>
+        </div>
+    {/if}
 </form>
