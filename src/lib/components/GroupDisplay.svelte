@@ -1,12 +1,11 @@
 <script lang="ts">
     import { groups, regenerateGroups, people, groupSettings } from '$lib/stores';
-    import { getFamilyNumberColor } from '$lib/utils/colors';
 </script>
 
 <div class="w-full max-w-lg mx-auto">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2">
     {#each $groups as group (group.id)}
-        <div class="p-4 bg-white rounded-lg shadow">
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
             <h3 class="text-sm uppercase rounded mb-1 font-bold text-gray-400">{group.id}</h3>
             <ul class="space-y">
                 {#each group.members.sort((a, b) => {
@@ -16,7 +15,7 @@
                 }) as member}
                     <li class="flex items-center gap-2">
                         <div class="flex items-center gap-2">
-                            <span class={`font-medium whitespace-nowrap ${member.isLeader ? 'text-green-600' : ''}`}>{member.name}</span>
+                            <span class={`font-medium whitespace-nowrap ${member.isLeader ? 'text-green-600 dark:text-green-300' : ''}`}>{member.name}</span>
                             <span class={`font-mono font-bold text-sm ${member.gender === 'M' ? 'text-blue-700' : 'text-fuchsia-500'}`}>
                                 {member.gender}
                             </span>

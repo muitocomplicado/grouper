@@ -50,6 +50,34 @@
         isLeader = previousState.isLeader;
     }
 
+    function decrementFamilyNumber() {
+        const currentNum = parseInt(familyNumber) || 0;
+        if (currentNum > 0) {
+            familyNumber = (currentNum - 1).toString();
+            if (familyNumber === '0') familyNumber = '';
+        }
+    }
+
+    function incrementFamilyNumber() {
+        const currentNum = parseInt(familyNumber) || 0;
+        if (currentNum < 99) {
+            familyNumber = (currentNum + 1).toString();
+        }
+    }
+
+    function handleFamilyNumberInput(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const value = input.value.replace(/[^0-9]/g, '');
+        const numValue = parseInt(value) || 0;
+        if (numValue > 99) {
+            familyNumber = '99';
+        } else if (numValue === 0) {
+            familyNumber = '';
+        } else {
+            familyNumber = numValue.toString();
+        }
+    }
+
     function handleSubmit() {
         const trimmedName = name.trim();
         if (!trimmedName) return;
@@ -94,13 +122,14 @@
     }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="p-4 bg-white rounded-lg shadow">
+<form on:submit|preventDefault={handleSubmit} class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
     <div class="flex items-center gap-2 mb-4">
         <input
             type="text"
             bind:value={name}
             placeholder="Nome"
-            class="flex-1 min-w-0 px-3 py-2 border rounded"
+            autocomplete="off"
+            class="flex-1 min-w-0 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
 
         <button
@@ -108,8 +137,8 @@
             on:click={() => gender = gender === 'M' ? 'F' : 'M'}
             class={`px-4 py-2 rounded font-medium ${
                 gender === 'M'
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                : 'bg-fuchsia-100 text-fuchsia-500 hover:bg-fuchsia-200'
+                ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                : 'bg-fuchsia-100 dark:bg-fuchsia-900 text-fuchsia-500 dark:text-fuchsia-300 hover:bg-fuchsia-200 dark:hover:bg-fuchsia-800'
             }`}
         >
             <span class="font-mono font-bold">{gender}</span>
@@ -120,32 +149,46 @@
             on:click={() => isLeader = !isLeader}
             class={`px-4 py-2 rounded font-medium ${
                 isLeader
-                ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
         >
-            <span class="font-mono font-bold">{isLeader ? 'L' : '-'}</span>
+            <span class="font-mono font-bold">{isLeader ? 'L' : '*'}</span>
         </button>
 
-        <input
-            type="number"
-            bind:value={familyNumber}
-            min="0"
-            max="99"
-            class="w-14 px-2 py-2 border rounded"
-            on:input={(e) => {
-                const val = parseInt(e.currentTarget.value);
-                if (val > 99) e.currentTarget.value = '99';
-                if (val < 0) e.currentTarget.value = '0';
-                if (val === 0) e.currentTarget.value = '';
-            }}
-        />
+        <div class="flex items-center">
+            <button
+                type="button"
+                on:click={decrementFamilyNumber}
+                class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-l border border-r-0 dark:border-gray-600 dark:text-white"
+                aria-label="Diminuir número da família"
+            >
+                -
+            </button>
+            <input
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                bind:value={familyNumber}
+                on:input={handleFamilyNumberInput}
+                autocomplete="off"
+                class="w-10 px-2 py-2 border-y text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+            <button
+                type="button"
+                on:click={incrementFamilyNumber}
+                class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-r border border-l-0 dark:border-gray-600 dark:text-white"
+                aria-label="Aumentar número da família"
+            >
+                +
+            </button>
+        </div>
     </div>
 
     <div class="flex gap-2">
         <button
             type="submit"
-            class={`flex-1 px-6 py-3 text-white rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed ${
+            class={`flex-1 px-6 py-3 text-white rounded-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed font-bold ${
                 editingPerson ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
             }`}
             disabled={hasDuplicate}
@@ -158,7 +201,7 @@
             <button
                 type="button"
                 on:click={resetForm}
-                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 font-bold"
             >
                 Cancelar
             </button>
