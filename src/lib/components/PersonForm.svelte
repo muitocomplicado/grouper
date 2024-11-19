@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { people } from '$lib/stores';
     import type { Person } from '$lib/types';
     import { nanoid } from 'nanoid';
@@ -120,6 +121,20 @@
             name = '';
         }
     }
+
+    // Handle escape key
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape' && editingPerson) {
+            resetForm();
+        }
+    }
+
+    onMount(() => {
+        document.addEventListener('keydown', handleKeydown);
+        return () => {
+            document.removeEventListener('keydown', handleKeydown);
+        };
+    });
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">

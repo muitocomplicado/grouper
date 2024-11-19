@@ -1,17 +1,24 @@
 <script lang="ts">
     import PersonForm from '$lib/components/PersonForm.svelte';
     import PersonList from '$lib/components/PersonList.svelte';
+    import GroupSettings from '$lib/components/GroupSettings.svelte';
+    import GroupDisplay from '$lib/components/GroupDisplay.svelte';
+    import CopyGroupsFooter from '$lib/components/CopyGroupsFooter.svelte';
+
     import { people } from '$lib/stores';
     import { goto } from '$app/navigation';
 
     let personForm: PersonForm | undefined;
 
+    let showGroups = false;
+
     function startGroupGeneration() {
-        goto('/groups');
+        showGroups = true;
     }
 </script>
 
 <div class="h-screen flex flex-col">
+{#if !showGroups}
     <div class="container mx-auto px-4 max-w-lg flex-1 flex flex-col">
         <div class="sticky top-0 pt-4 pb-4 z-10 bg-white dark:bg-gray-900">
             <PersonForm bind:this={personForm} />
@@ -44,4 +51,21 @@
             </button>
         </div>
     </div>
+{:else}
+    <div class="h-screen flex flex-col">
+        <div class="container mx-auto px-4 max-w-lg flex-1 flex flex-col">
+            <div class="sticky top-0 pt-4 pb-4 z-10 bg-white dark:bg-gray-900">
+                <GroupSettings on:back={() => showGroups = false} />
+            </div>
+            <div class="flex-1">
+                <div class="space-y-6">
+                    <GroupDisplay />
+                </div>
+            </div>
+            <div class="sticky bottom-0 pt-4 pb-4 bg-white dark:bg-gray-900">
+                <CopyGroupsFooter />
+            </div>
+        </div>
+    </div>
+{/if}
 </div>

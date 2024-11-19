@@ -1,6 +1,9 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
     import { groupSettings, regenerateGroups, people } from '$lib/stores';
     import { goto } from '$app/navigation';
+
+    const dispatch = createEventDispatcher();
 
     let settings = $groupSettings;
     $: hasLeaders = $people.some(p => p.isLeader);
@@ -91,7 +94,7 @@
         </button>
         <button
             type="button"
-            on:click={() => goto('/')}
+            on:click={() => dispatch('back')}
             class="px-6 py-3 font-bold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700"
         >
             Voltar
