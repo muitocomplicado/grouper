@@ -54,15 +54,15 @@
         </div>
 
         {#if !isKeyboardOpen}
-        <div class="sticky bottom-0 pt-4 pb-4 bg-white dark:bg-gray-900">
+        <div class="sticky bottom-0 pt-4 pb-6 bg-white dark:bg-gray-900">
             <button
                 on:click={startGroupGeneration}
-                class="w-full px-6 py-3 font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                class="w-full flex items-center justify-center flex-wrap px-6 py-3 gap-x-4 gap-y-2 font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                 disabled={$people.length < 2}
             >
-                Grupos
+                <span>Grupos</span>
                 {#if $people.length > 0}
-                    <span class="bg-white/20 dark:bg-black/20 px-2 py-1 ml-2 rounded text-sm">
+                    <span class="bg-white/20 dark:bg-black/20 px-2 py-1 rounded text-sm whitespace-nowrap">
                         {$people.length} pessoa{$people.length > 1 ? 's' : ''}
                     </span>
                 {/if}
@@ -82,7 +82,7 @@
                 </div>
             </div>
             {#if !isKeyboardOpen}
-            <div class="sticky bottom-0 pt-4 pb-4 bg-white dark:bg-gray-900">
+            <div class="sticky bottom-0 pt-4 pb-6 bg-white dark:bg-gray-900">
                 <CopyGroupsFooter />
             </div>
             {/if}

@@ -32,7 +32,7 @@
 </script>
 
 <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-    <div class="space-y-4">
+    <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
             <label class="flex-1 flex items-center">
                 <button
@@ -42,15 +42,18 @@
                 >
                     -
                 </button>
-                <input
-                    type="text"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    value={settings.peoplePerGroup}
-                    on:input={handleInput}
-                    autocomplete="off"
-                    class="w-12 px-3 py-2 border-y text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
+                <div class="flex items-center border-y dark:border-gray-600">
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        value={settings.peoplePerGroup}
+                        on:input={handleInput}
+                        autocomplete="off"
+                        class="sr-only"
+                    />
+                    <span class="px-3 py-2 dark:text-white">{settings.peoplePerGroup} por grupo</span>
+                </div>
                 <button
                     on:click={incrementPeoplePerGroup}
                     class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-r border border-l-0 dark:border-gray-600 dark:text-white"
@@ -58,33 +61,34 @@
                 >
                     +
                 </button>
-                <span class="ml-2">por grupo</span>
             </label>
         </div>
 
-        <label class="flex items-center gap-2">
-            <input
-                type="checkbox"
-                bind:checked={settings.separateGenders}
-                class="text-blue-600"
-            />
-            <span>Separado por sexo</span>
-        </label>
+        <div class="flex flex-col">
+          <label class="flex items-center gap-2 whitespace-nowrap">
+              <input
+                  type="checkbox"
+                  bind:checked={settings.separateGenders}
+                  class="text-blue-600"
+              />
+              <span>Separado por sexo</span>
+          </label>
 
-        <label class="flex items-center gap-2">
-            <input
-                type="checkbox"
-                bind:checked={settings.requireLeader}
-                class="text-green-600"
-                disabled={!hasLeaders}
-            />
-            <span class={!hasLeaders ? 'text-gray-400' : ''}>
-                Um líder por grupo
-            </span>
-        </label>
+          <label class="flex items-center gap-2 whitespace-nowrap">
+              <input
+                  type="checkbox"
+                  bind:checked={settings.requireLeader}
+                  class="text-green-600"
+                  disabled={!hasLeaders}
+              />
+              <span class={!hasLeaders ? 'text-gray-400' : ''}>
+                  Um líder por grupo
+              </span>
+          </label>
+        </div>
     </div>
 
-    <div class="mt-6 flex gap-2">
+    <div class="mt-4 flex gap-2">
         <button
             on:click={regenerateGroups}
             class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"

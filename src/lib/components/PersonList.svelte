@@ -29,18 +29,17 @@
         <div
             role="button"
             tabindex="0"
-            class="w-full text-left flex items-center justify-between py-2 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="w-full text-left flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             on:click={() => handlePersonClick(person)}
             on:keydown={(e) => e.key === 'Enter' && handlePersonClick(person)}
             aria-label={`Edit ${person.name}'s information`}
         >
             <div class="flex-1 flex items-center gap-3">
-                <span class={`font-medium whitespace-nowrap ${person.isLeader ? 'text-green-600 dark:text-green-300' : ''}`}>{person.name}</span>
-
-                <span class={`font-mono font-bold ${person.gender === 'M' ? 'text-blue-700' : 'text-fuchsia-500'}`}>
+                <span class={`font-mono font-bold ${person.gender === 'M' ? 'text-blue-700 dark:text-blue-500' : 'text-fuchsia-500'}`}>
                     {person.gender}
                 </span>
 
+                <span class={`font-medium whitespace-nowrap ${person.isLeader ? 'text-green-600 dark:text-green-300' : ''}`}>{person.name}</span>
             </div>
 
             {#if person.familyNumber !== undefined && person.familyNumber > 0}
@@ -55,7 +54,7 @@
             <button
                 type="button"
                 on:click|stopPropagation={() => removePerson(person.id)}
-                class="ml-4 text-red-600 hover:bg-red-50 rounded"
+                class="ml-4 text-red-600 hover:text-black dark:hover:text-white rounded"
                 aria-label={`Remove ${person.name}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

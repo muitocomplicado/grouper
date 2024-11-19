@@ -159,7 +159,7 @@
             class={`px-4 py-2 rounded font-medium ${
                 isLeader
                 ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
         >
             <span class="font-mono font-bold">{isLeader ? 'L' : '*'}</span>
@@ -172,7 +172,7 @@
             bind:value={familyNumber}
             on:input={handleFamilyNumberInput}
             autocomplete="off"
-            class="w-16 px-2 py-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-12 px-2 py-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
     </div>
 
