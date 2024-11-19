@@ -22,3 +22,4 @@ vite.config.ts.timestamp-*
 .aider.tags.cache.v3
 .aider.input.history
 .aider.chat.history.md
+.aider*
