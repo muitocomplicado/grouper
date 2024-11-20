@@ -154,7 +154,7 @@
                 const element = document.querySelector(`[data-person-id="${newPerson.id}"]`);
                 if (!element) return;
 
-                const headerOffset = 200;
+                const headerOffset = 100;
                 const padding = 20;
 
                 const elementRect = element.getBoundingClientRect();
