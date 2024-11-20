@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { groups, groupSettings } from '$lib/stores';
+    import { groups, groupSettings, isRegenerating } from '$lib/stores';
     import { formatGroupsAsText } from '$lib/utils/formatGroups';
 
     let buttonText = "Copiar Grupos";
@@ -23,7 +23,7 @@
     <button
         on:click={copyGroupsToClipboard}
         class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold disabled:bg-gray-400 dark:disabled:bg-gray-600"
-        disabled={!$groups || $groups.length === 0}
+        disabled={(!$groups || $groups.length === 0) && !$isRegenerating}
     >
         {buttonText}
     </button>

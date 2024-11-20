@@ -27,6 +27,7 @@ if (typeof localStorage !== 'undefined') {
 }
 
 export const groups = writable<Group[]>(initialGroups);
+export const isRegenerating = writable<boolean>(false);
 
 // Subscribe to changes and update localStorage
 people.subscribe(value => {
@@ -371,28 +372,31 @@ function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] 
 }
 
 // Function to trigger group generation
-export function regenerateGroups() {
+export async function regenerateGroups() {
     const currentPeople = get(people);
     const currentSettings = get(groupSettings);
+
+    isRegenerating.set(true);
+    groups.set([]);
 
     // Validate settings
     if (currentPeople.length === 0) {
         console.warn('No people available to generate groups');
-        groups.set([]);
         return;
     }
 
     if (currentSettings.requireLeader && !currentPeople.some(p => p.isLeader)) {
         console.warn('Leaders required but no leaders available');
-        groups.set([]);
         return;
     }
 
     if (currentSettings.peoplePerGroup < 2) {
         console.warn('Groups must have at least 2 people');
-        groups.set([]);
         return;
     }
+
+    // Small delay to ensure animations reset
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const newGroups = generateGroups(currentPeople, currentSettings);
     groups.set(newGroups);

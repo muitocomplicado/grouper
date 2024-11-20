@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import { groupSettings, regenerateGroups, people, groups } from '$lib/stores';
+    import { groupSettings, regenerateGroups, people, groups, isRegenerating } from '$lib/stores';
     import { goto } from '$app/navigation';
 
     const dispatch = createEventDispatcher();
@@ -97,7 +97,7 @@
         <button
             on:click={regenerateGroups}
             class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
-            disabled={$people.length < 2}
+            disabled={$people.length < 2 && !$isRegenerating}
         >
             Gerar Grupos
         </button>

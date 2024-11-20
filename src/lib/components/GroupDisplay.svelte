@@ -1,11 +1,15 @@
 <script lang="ts">
-    import { groups, regenerateGroups, people, groupSettings } from '$lib/stores';
+    import { groups, regenerateGroups, people, groupSettings, isRegenerating } from '$lib/stores';
+    import { fly } from 'svelte/transition';
 </script>
 
 <div class="w-full max-w-lg mx-auto">
     <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 pb-2">
     {#each $groups as group (group.id)}
-        <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div
+            class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
+            in:fly={{ x: 100, duration: 400, delay: group.id * 150 }}
+        >
             <h3 class="text-sm uppercase rounded mb-1 font-bold text-gray-400">{group.id}</h3>
             <ul class="space-y">
                 {#each group.members.sort((a, b) => {
@@ -27,7 +31,7 @@
     {/each}
     </div>
 
-    {#if !$groups || $groups.length === 0}
+    {#if (!$groups || $groups.length === 0) && !$isRegenerating}
         <div class="text-center text-gray-500 py-8">
             {#if $people.length < 2}
                 Pelo menos duas pessoas são necessárias.
