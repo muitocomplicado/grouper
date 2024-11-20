@@ -1,3 +1,24 @@
+<style>
+    .flash-highlight {
+        animation: flashHighlight 0.5s ease-out;
+    }
+
+    @keyframes flashHighlight {
+        0% {
+            position: relative;
+        }
+        50% {
+            position: relative;
+        }
+        0%, 50% {
+            box-shadow: inset 0 0 0 2000px rgba(255, 255, 255, 0.3);
+        }
+        100% {
+            box-shadow: inset 0 0 0 2000px rgba(255, 255, 255, 0);
+        }
+    }
+</style>
+
 <script lang="ts">
     import { people } from '$lib/stores';
     import { flip } from 'svelte/animate';
@@ -12,13 +33,24 @@
         }
     }
 
-    function toggleMissing(id: string) {
+    function toggleMissing(id: string, element: HTMLElement) {
         people.update(p => p.map(person =>
             person.id === id ? {...person, isMissing: !person.isMissing} : person
         ));
         if (personForm) {
             personForm.resetForm();
         }
+        
+        // Wait for the flip animation to complete before flashing
+        setTimeout(() => {
+            const row = element.closest('[data-person-id]');
+            if (row) {
+                row.classList.add('flash-highlight');
+                setTimeout(() => {
+                    row.classList.remove('flash-highlight');
+                }, 500);
+            }
+        }, 300); // Match the flip animation duration
     }
 
     import type PersonForm from './PersonForm.svelte';
@@ -45,6 +77,7 @@
         <div
             role="button"
             tabindex="0"
+            data-person-id={person.id}
             class="w-full text-left flex items-center justify-between py-2 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             style={person.isMissing ? 'opacity: 0.5;' : ''}
             animate:flip={{ duration: 300 }}
@@ -72,7 +105,7 @@
 
             <button
                 type="button"
-                on:click|stopPropagation={() => toggleMissing(person.id)}
+                on:click|stopPropagation={(e) => toggleMissing(person.id, e.currentTarget)}
                 class="ml-4 p-2 text-gray-400 hover:text-black dark:hover:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                 aria-label={`Mark ${person.name} as ${person.isMissing ? 'present' : 'missing'}`}
             >

@@ -12,9 +12,9 @@
         const usedNumbers = currentPeople
             .map(p => p.familyNumber || 0)
             .filter(n => n > 0);
-        
+
         if (usedNumbers.length === 0) return 1;
-        
+
         return Math.max(...usedNumbers) + 1;
     }
 
@@ -60,7 +60,7 @@
         familyNumber = person.familyNumber?.toString() ?? '';
         isLeader = person.isLeader;
         // isMissing status is preserved in the person object and doesn't need form controls
-        
+
         // Focus the name input after a short delay to ensure the DOM is ready
         setTimeout(() => {
             nameInput?.focus();
@@ -131,6 +131,50 @@
                 isMissing: false
             };
             people.update(p => [...p, newPerson]);
+            
+            // Use RAF to ensure DOM is updated
+            requestAnimationFrame(() => {
+                const element = document.querySelector(`[data-person-id="${newPerson.id}"]`);
+                if (!element) return;
+
+                const headerOffset = 200;
+                const padding = 20;
+                
+                const elementRect = element.getBoundingClientRect();
+                const absoluteElementTop = elementRect.top + window.pageYOffset;
+                const targetPosition = absoluteElementTop - headerOffset - padding;
+                
+                // Smooth but quick scroll
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+
+                // Wait for scroll to finish before flashing
+                let scrollTimeout: number;
+                const checkScrollEnd = () => {
+                    if (scrollTimeout) {
+                        clearTimeout(scrollTimeout);
+                    }
+                    scrollTimeout = setTimeout(() => {
+                        // Add flash effect class after scroll completes
+                        element.classList.add('flash-highlight');
+                        // Remove class after animation
+                        setTimeout(() => {
+                            element.classList.remove('flash-highlight');
+                        }, 500);
+                    }, 100); // Small buffer after scroll ends
+                };
+
+                // Listen for scroll end
+                const scrollListener = () => checkScrollEnd();
+                window.addEventListener('scroll', scrollListener, { passive: true });
+
+                // Cleanup listener after animation
+                setTimeout(() => {
+                    window.removeEventListener('scroll', scrollListener);
+                }, 1000); // Ensure cleanup after everything is done
+            });
             name = '';
             nameInput?.focus();
         }

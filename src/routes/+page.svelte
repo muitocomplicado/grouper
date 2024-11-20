@@ -53,7 +53,10 @@
 {#if !showGroups}
     <div class="container mx-auto px-4 max-w-lg flex-1 flex flex-col">
         <div class="sticky top-0 pt-4 pb-4 z-10 bg-white dark:bg-gray-900">
-            <PersonForm bind:this={personForm} />
+            <PersonForm 
+                bind:this={personForm}
+                on:personAdded={event => personForm?.handlePersonAdded?.(event)}
+            />
         </div>
 
         <div class="flex-1">
@@ -63,7 +66,7 @@
                         Adicione uma pessoa acima
                     </div>
                 {:else}
-                <PersonList {personForm} />
+                    <PersonList {personForm} />
                 {/if}
             </div>
         </div>
