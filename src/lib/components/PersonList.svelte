@@ -78,7 +78,7 @@
             role="button"
             tabindex="0"
             data-person-id={person.id}
-            class="w-full text-left flex items-center justify-between py-2 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="w-full text-left flex items-center justify-between py-2 pl-4 pr-2 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             style={person.isMissing ? 'opacity: 0.5;' : ''}
             animate:flip={{ duration: 300 }}
             out:scale|local={{ duration: 200, start: 0.95, opacity: 0 }}
