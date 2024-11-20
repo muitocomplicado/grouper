@@ -99,7 +99,7 @@
             class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
             disabled={$people.length < 2 && !$isRegenerating}
         >
-            Gerar Grupos
+            Gerar
         </button>
         <slot name="copy-button" />
     </div>

@@ -2,7 +2,7 @@
     import { groups, groupSettings, isRegenerating } from '$lib/stores';
     import { formatGroupsAsText } from '$lib/utils/formatGroups';
 
-    let buttonText = "Copiar Grupos";
+    let buttonText = "Copiar";
 
     async function copyGroupsToClipboard() {
         const text = formatGroupsAsText($groups, $groupSettings.requireLeader);
@@ -10,7 +10,7 @@
             await navigator.clipboard.writeText(text);
             buttonText = "Copiado";
             setTimeout(() => {
-                buttonText = "Copiar Grupos";
+                buttonText = "Copiar";
             }, 2000);
         } catch (error) {
             console.error("Failed to copy text:", error);
