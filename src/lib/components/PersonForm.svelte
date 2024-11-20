@@ -26,7 +26,7 @@
     let familyNumber: string = '';
     let isLeader = false;
     let hasDuplicate = false;
-    let isNameFocused = false;
+    let formActive = false;
 
     $: {
         const trimmedName = name.trim();
@@ -34,6 +34,8 @@
             p.name.toLowerCase() === trimmedName.toLowerCase() &&
             p.id !== editingPerson?.id
         );
+        // Keep form active if there's content or we're editing
+        formActive = editingPerson !== null || trimmedName !== '';
     }
 
     // Store previous state before editing
@@ -169,8 +171,6 @@
             autocomplete="off"
             autocapitalize="sentences"
             spellcheck="false"
-            on:focus={() => isNameFocused = true}
-            on:blur={() => isNameFocused = false}
             class="flex-1 min-w-0 px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
 
@@ -220,7 +220,7 @@
         />
     </div>
 
-    {#if isNameFocused || editingPerson || name.trim()}
+    {#if formActive}
         <div class="flex gap-2 mt-4">
             <button
                 type="submit"
