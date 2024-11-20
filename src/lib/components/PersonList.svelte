@@ -106,6 +106,7 @@
             <button
                 type="button"
                 on:click|stopPropagation={(e) => toggleMissing(person.id, e.currentTarget)}
+                on:touchend|stopPropagation|preventDefault={(e) => toggleMissing(person.id, e.currentTarget)}
                 class="ml-4 p-2 text-gray-400 hover:text-black dark:hover:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                 aria-label={`Mark ${person.name} as ${person.isMissing ? 'present' : 'missing'}`}
             >
@@ -122,6 +123,7 @@
             <button
                 type="button"
                 on:click|stopPropagation={() => removePerson(person.id)}
+                on:touchend|stopPropagation|preventDefault={() => removePerson(person.id)}
                 class="ml-2 p-2 text-red-600 hover:text-black dark:hover:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                 aria-label={`Remove ${person.name}`}
             >
