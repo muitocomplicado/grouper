@@ -380,12 +380,12 @@ export async function regenerateGroups() {
     groups.set([]);
 
     // Validate settings
-    if (currentPeople.length === 0) {
+    if (currentPeople.filter(p => !p.isMissing).length === 0) {
         console.warn('No people available to generate groups');
         return;
     }
 
-    if (currentSettings.requireLeader && !currentPeople.some(p => p.isLeader)) {
+    if (currentSettings.requireLeader && !currentPeople.filter(p => !p.isMissing).some(p => p.isLeader)) {
         console.warn('Leaders required but no leaders available');
         return;
     }

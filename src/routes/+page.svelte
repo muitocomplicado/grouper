@@ -4,7 +4,7 @@
     import PersonList from '$lib/components/PersonList.svelte';
     import GroupSettings from '$lib/components/GroupSettings.svelte';
     import GroupDisplay from '$lib/components/GroupDisplay.svelte';
-
+    import { getFamilyNumberColor } from '$lib/utils/colors';
     import { people, groups, groupSettings } from '$lib/stores';
     import { goto } from '$app/navigation';
     import { formatGroupsAsText } from '$lib/utils/formatGroups';
@@ -59,8 +59,8 @@
                 {#if !showGroups}
                     <div in:fade={{ duration: 400 }}>
                         {#if $people.length === 0}
-                            <div class="text-center text-gray-500 py-8">
-                                Adicione uma pessoa acima
+                            <div class="text-center text-gray-500 py-8 text-balance">
+                                Adicione uma pessoa acima com seu respectivo sexo <span class="font-mono font-bold text-blue-700 dark:text-blue-500">M</span> / <span class="font-mono font-bold text-fuchsia-500">F</span>, indicando se é um <span class="font-mono font-bold text-green-600 dark:text-green-300 text-sm">Líder</span> e se pertence a uma rede <span class="px-2 py-1 text-xs rounded font-mono invert-0 dark:invert" style={`${getFamilyNumberColor(1)}`}>1</span> <span class="px-2 py-1 text-xs rounded font-mono invert-0 dark:invert" style={`${getFamilyNumberColor(2)}`}>2</span> <span class="px-2 py-1 text-xs rounded font-mono invert-0 dark:invert" style={`${getFamilyNumberColor(3)}`}>3</span> que será espalhada nos grupos
                             </div>
                         {:else}
                             <PersonList {personForm} />
@@ -82,7 +82,7 @@
                         <button
                             on:click={startGroupGeneration}
                             class="w-full flex items-center justify-center flex-wrap px-6 py-3 gap-x-4 gap-y-2 font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
-                            disabled={$people.length < 2}
+                            disabled={$people.filter(p => !p.isMissing).length < 2}
                         >
                             <span>Grupos</span>
                             {#if $people.filter(p => !p.isMissing).length > 0}

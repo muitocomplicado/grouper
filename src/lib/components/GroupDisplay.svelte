@@ -33,12 +33,12 @@
 
     {#if (!$groups || $groups.length === 0) && !$isRegenerating}
         <div class="text-center text-gray-500 py-8">
-            {#if $people.length < 2}
-                Pelo menos duas pessoas são necessárias.
-            {:else if $groupSettings.requireLeader && !$people.some(p => p.isLeader)}
-                Pelo menos um líder é necessário.
+            {#if $people.filter(p => !p.isMissing) < 2}
+                Pelo menos duas pessoas são necessárias
+            {:else if $groupSettings.requireLeader && !$people.filter(p => !p.isMissing).some(p => p.isLeader)}
+                Pelo menos um líder é necessário
             {:else}
-                Nenhum grupo gerado.
+                Nenhum grupo gerado
             {/if}
         </div>
     {/if}
