@@ -1,3 +1,20 @@
+<style>
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-1rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-slide-down {
+        animation: slideDown 0.2s ease-out forwards;
+    }
+</style>
+
 <script lang="ts">
     import { onMount } from 'svelte';
     import { people } from '$lib/stores';
@@ -265,7 +282,7 @@
     </div>
 
     {#if formActive}
-        <div class="flex gap-2 mt-4">
+        <div class="flex gap-2 mt-4 animate-slide-down">
             <button
                 type="submit"
                 class={`flex-1 px-6 py-3 text-white rounded-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed font-bold ${
