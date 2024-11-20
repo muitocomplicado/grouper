@@ -148,7 +148,7 @@
                 isMissing: false
             };
             people.update(p => [...p, newPerson]);
-            
+
             // Use RAF to ensure DOM is updated
             requestAnimationFrame(() => {
                 const element = document.querySelector(`[data-person-id="${newPerson.id}"]`);
@@ -156,11 +156,11 @@
 
                 const headerOffset = 200;
                 const padding = 20;
-                
+
                 const elementRect = element.getBoundingClientRect();
                 const absoluteElementTop = elementRect.top + window.pageYOffset;
                 const targetPosition = absoluteElementTop - headerOffset - padding;
-                
+
                 // Smooth but quick scroll
                 window.scrollTo({
                     top: targetPosition,
@@ -271,10 +271,6 @@
                 } else {
                     familyNumber = '';
                 }
-                // Use setTimeout to ensure the value is updated before selecting
-                setTimeout(() => {
-                    (e.target as HTMLInputElement).select();
-                }, 0);
             }}
             autocomplete="off"
             class="w-12 px-2 py-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 dark:text-white"
