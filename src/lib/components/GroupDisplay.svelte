@@ -27,7 +27,7 @@
     {/each}
     </div>
 
-    {#if $groups.length === 0}
+    {#if !$groups || $groups.length === 0}
         <div class="text-center text-gray-500 py-8">
             {#if $people.length < 2}
                 Pelo menos duas pessoas são necessárias.

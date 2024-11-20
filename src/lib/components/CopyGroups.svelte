@@ -18,11 +18,14 @@
     }
 </script>
 
-{#if $groups.length > 0}
-<button
-    on:click={copyGroupsToClipboard}
-    class="w-full max-w-lg mx-auto px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold"
->
-    {buttonText}
-</button>
-{/if}
+<div class="flex flex-col gap-4">
+    {#if $groups.length > 0}
+    <button
+        on:click={copyGroupsToClipboard}
+        class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold disabled:bg-gray-400 dark:disabled:bg-gray-600"
+        disabled={!$groups || $groups.length === 0}
+    >
+        {buttonText}
+    </button>
+    {/if}
+</div>

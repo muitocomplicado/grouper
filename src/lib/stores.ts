@@ -13,10 +13,16 @@ let initialGroups: Group[] = [];
 
 // Only load stored groups if the timestamp is recent (within last minute)
 if (typeof localStorage !== 'undefined') {
-    const lastSaveTime = parseInt(localStorage.getItem('groupListTimestamp') || '0');
-    const now = Date.now();
-    if (now - lastSaveTime < 15*60000) { // 15 minutes
-        initialGroups = JSON.parse(localStorage.getItem('groupList') || '[]');
+    try {
+        const storedGroups = localStorage.getItem('groupList');
+        const lastSaveTime = parseInt(localStorage.getItem('groupListTimestamp') || '0');
+        const now = Date.now();
+        if (storedGroups && now - lastSaveTime < 15*60000) { // 15 minutes
+            initialGroups = JSON.parse(storedGroups);
+        }
+    } catch (e) {
+        console.warn('Failed to parse stored groups:', e);
+        initialGroups = [];
     }
 }
 
@@ -54,8 +60,12 @@ groups.subscribe(value => {
 function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] {
     if (peopleList.length === 0) return [];
 
-    // Start with a completely random shuffle of people
-    let availablePeople = [...peopleList].sort(() => Math.random() - 0.5);
+    // Start with a completely random shuffle of non-missing people
+    let availablePeople = [...peopleList]
+        .filter(p => !p.isMissing)
+        .sort(() => Math.random() - 0.5);
+
+    if (availablePeople.length === 0) return [];
 
     const groups: Group[] = [];
     let groupId = 1;
@@ -63,14 +73,14 @@ function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] 
     // If separating genders, calculate groups differently
     let possibleGroups;
     if (settings.separateGenders) {
-        const maleGroups = Math.floor(peopleList.filter(p => p.gender === 'M').length / settings.peoplePerGroup);
-        const femaleGroups = Math.floor(peopleList.filter(p => p.gender === 'F').length / settings.peoplePerGroup);
+        const maleGroups = Math.floor(availablePeople.filter(p => p.gender === 'M').length / settings.peoplePerGroup);
+        const femaleGroups = Math.floor(availablePeople.filter(p => p.gender === 'F').length / settings.peoplePerGroup);
         possibleGroups = maleGroups + femaleGroups;
 
         // If leaders are required, check leaders by gender
         if (settings.requireLeader) {
-            const malePeopleWithLeaders = peopleList.filter(p => p.gender === 'M' && p.isLeader).length;
-            const femalePeopleWithLeaders = peopleList.filter(p => p.gender === 'F' && p.isLeader).length;
+            const malePeopleWithLeaders = availablePeople.filter(p => p.gender === 'M' && p.isLeader).length;
+            const femalePeopleWithLeaders = availablePeople.filter(p => p.gender === 'F' && p.isLeader).length;
             possibleGroups = Math.min(possibleGroups, malePeopleWithLeaders + femalePeopleWithLeaders);
         }
     } else {
@@ -83,8 +93,8 @@ function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] 
     }
 
     // Count total males and females (for mixed groups)
-    const totalMales = peopleList.filter(p => p.gender === 'M').length;
-    const totalFemales = peopleList.filter(p => p.gender === 'F').length;
+    const totalMales = availablePeople.filter(p => p.gender === 'M').length;
+    const totalFemales = availablePeople.filter(p => p.gender === 'F').length;
     const minorityGender: 'M' | 'F' = totalMales <= totalFemales ? 'M' : 'F';
 
     // Only create groups if we can make at least one full-sized group
@@ -224,104 +234,136 @@ function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] 
                 if (nextPerson) {
                     group.members.push(nextPerson);
                     availablePeople = availablePeople.filter(p => p.id !== nextPerson!.id);
+                } else {
+                    break;
                 }
             }
         }
 
         // Handle remaining people
-        const minPeopleForNewGroup = Math.ceil(settings.peoplePerGroup / 2) + 1;
-        
-        if (availablePeople.length >= minPeopleForNewGroup) {
-            let canFormNewGroup = true;
-            
-            // Check if we can meet gender requirements
-            if (settings.separateGenders && availablePeople.length >= minPeopleForNewGroup) {
-                const maleCount = availablePeople.filter(p => p.gender === 'M').length;
-                const femaleCount = availablePeople.filter(p => p.gender === 'F').length;
-                canFormNewGroup = maleCount >= minPeopleForNewGroup || femaleCount >= minPeopleForNewGroup;
-            }
-            
-            // Check if we can meet leader requirements
-            if (settings.requireLeader && canFormNewGroup) {
-                const hasLeader = availablePeople.some(p => p.isLeader);
-                if (!hasLeader) {
-                    canFormNewGroup = false;
-                }
-            }
-            
-            if (canFormNewGroup) {
-                // Create a new smaller group if requirements can be met
-                const newGroup: Person[] = [];
-                
-                if (settings.requireLeader) {
-                    // Try to find a leader first
-                    const leaderIndex = availablePeople.findIndex(p => p.isLeader);
-                    if (leaderIndex !== -1) {
-                        newGroup.push(availablePeople.splice(leaderIndex, 1)[0]);
-                    }
-                }
-                
-                // If separating genders, determine the gender for this group
-                let targetGender: 'M' | 'F' | null = null;
-                if (settings.separateGenders) {
-                    const maleCount = availablePeople.filter(p => p.gender === 'M').length;
-                    const femaleCount = availablePeople.filter(p => p.gender === 'F').length;
-                    targetGender = maleCount >= femaleCount ? 'M' : 'F';
-                }
-                
-                // Add remaining people to the new group
-                while (availablePeople.length > 0) {
-                    if (settings.separateGenders && targetGender) {
-                        const personIndex = availablePeople.findIndex(p => p.gender === targetGender);
-                        if (personIndex !== -1) {
-                            newGroup.push(availablePeople.splice(personIndex, 1)[0]);
-                        } else {
-                            break;
-                        }
-                    } else {
-                        newGroup.push(availablePeople.shift()!);
-                    }
-                }
-                
-                groups.push({ id: groupId++, members: newGroup });
-            }
-        } else {
-            // Distribute remaining people across existing groups
-            let groupIndex = 0;
-            while (availablePeople.length > 0) {
-                if (settings.separateGenders) {
-                    // Find the next compatible group for this person's gender
-                    const person = availablePeople[0];
+        if (availablePeople.length > 0) {
+            // Calculate minimum people needed for a new smaller group
+            const minPeopleForNewGroup = Math.ceil(settings.peoplePerGroup / 2) + 1;
 
-                    // Find all compatible groups and their sizes
-                    let smallestCompatibleGroup: number = -1;
-                    let smallestGroupSize = Number.MAX_VALUE;
+            // Check if we have enough people for a new smaller group
+            if (availablePeople.length >= minPeopleForNewGroup) {
+                if (settings.separateGenders) {
+                    // Count remaining people by gender
+                    const remainingMales = availablePeople.filter(p => p.gender === 'M').length;
+                    const remainingFemales = availablePeople.filter(p => p.gender === 'F').length;
 
-                    for (let i = 0; i < groups.length; i++) {
-                        if (groups[i].members[0]?.gender === person.gender) {
-                            if (groups[i].members.length < smallestGroupSize) {
-                                smallestGroupSize = groups[i].members.length;
-                                smallestCompatibleGroup = i;
+                    // Check if we can form a valid gender group
+                    const canFormMaleGroup = remainingMales >= minPeopleForNewGroup;
+                    const canFormFemaleGroup = remainingFemales >= minPeopleForNewGroup;
+
+                    if (canFormMaleGroup || canFormFemaleGroup) {
+                        const targetGender = canFormMaleGroup ? 'M' : 'F';
+
+                        // If leaders required, check if we have one
+                        if (settings.requireLeader) {
+                            const hasLeader = availablePeople.some(p =>
+                                p.gender === targetGender && p.isLeader
+                            );
+
+                            if (!hasLeader) {
+                                // Fallback to distributing across existing groups
+                                return distributeRemainingPeople();
                             }
                         }
-                    }
 
-                    if (smallestCompatibleGroup !== -1) {
-                        // Add to the smallest compatible group
-                        groups[smallestCompatibleGroup].members.push(availablePeople.shift()!);
-                    } else {
-                        // If no compatible group found, add to smallest group
-                        const smallestGroup = groups.reduce((prev, curr) => 
-                            prev.members.length <= curr.members.length ? prev : curr
-                        );
-                        smallestGroup.members.push(availablePeople.shift()!);
+                        // Create new group
+                        const newGroup: Group = {
+                            id: groupId++,
+                            members: []
+                        };
+
+                        // Add leader first if required
+                        if (settings.requireLeader) {
+                            const leaderIndex = availablePeople.findIndex(p =>
+                                p.gender === targetGender && p.isLeader
+                            );
+                            newGroup.members.push(availablePeople.splice(leaderIndex, 1)[0]);
+                        }
+
+                        // Add remaining people of the same gender
+                        while (availablePeople.length > 0) {
+                            const personIndex = availablePeople.findIndex(p =>
+                                p.gender === targetGender
+                            );
+                            if (personIndex === -1) break;
+                            newGroup.members.push(availablePeople.splice(personIndex, 1)[0]);
+                        }
+
+                        groups.push(newGroup);
                     }
                 } else {
-                    // For mixed groups, distribute evenly
-                    groups[groupIndex].members.push(availablePeople.shift()!);
-                    groupIndex = (groupIndex + 1) % groups.length;
+                    // For mixed groups
+                    if (settings.requireLeader && !availablePeople.some(p => p.isLeader)) {
+                        // Fallback if we need a leader but don't have one
+                        return distributeRemainingPeople();
+                    }
+
+                    // Create new mixed group
+                    const newGroup: Group = {
+                        id: groupId++,
+                        members: []
+                    };
+
+                    // Add leader first if required
+                    if (settings.requireLeader) {
+                        const leaderIndex = availablePeople.findIndex(p => p.isLeader);
+                        newGroup.members.push(availablePeople.splice(leaderIndex, 1)[0]);
+                    }
+
+                    // Add remaining people maintaining gender balance if possible
+                    while (availablePeople.length > 0) {
+                        const malesInGroup = newGroup.members.filter(p => p.gender === 'M').length;
+                        const femalesInGroup = newGroup.members.filter(p => p.gender === 'F').length;
+
+                        // Try to maintain balance
+                        const targetGender = malesInGroup < femalesInGroup ? 'M' : 'F';
+                        const personIndex = availablePeople.findIndex(p => p.gender === targetGender);
+
+                        if (personIndex !== -1) {
+                            newGroup.members.push(availablePeople.splice(personIndex, 1)[0]);
+                        } else {
+                            // If we can't find preferred gender, take anyone
+                            newGroup.members.push(availablePeople.shift()!);
+                        }
+                    }
+
+                    groups.push(newGroup);
                 }
             }
+
+            // Distribute any remaining people across existing groups
+            return distributeRemainingPeople();
+        }
+
+        function distributeRemainingPeople() {
+            while (availablePeople.length > 0) {
+                const nextPerson = availablePeople[0];
+                if (settings.separateGenders) {
+                    const compatibleGroup = groups.find(g =>
+                        g.members.length > 0 && g.members[0].gender === nextPerson.gender
+                    );
+
+                    if (compatibleGroup) {
+                        compatibleGroup.members.push(availablePeople.shift()!);
+                    } else {
+                        // If no compatible group, create a new one
+                        const newGroup: Group = {
+                            id: groupId++,
+                            members: [availablePeople.shift()!]
+                        };
+                        groups.push(newGroup);
+                    }
+                } else {
+                    const sortedGroups = [...groups].sort((a, b) => a.members.length - b.members.length);
+                    sortedGroups[0].members.push(availablePeople.shift()!);
+                }
+            }
+            return groups;
         }
     }
 
@@ -357,9 +399,26 @@ export function regenerateGroups() {
 }
 
 // Initialize groupSettings from localStorage or defaults
-const storedSettings = typeof localStorage !== 'undefined'
-    ? JSON.parse(localStorage.getItem('groupSettings') || 'null')
-    : null;
+let storedSettings: GroupSettings | null = null;
+
+if (typeof localStorage !== 'undefined') {
+    try {
+        const rawSettings = localStorage.getItem('groupSettings');
+        if (rawSettings) {
+            const parsed = JSON.parse(rawSettings);
+            // Validate the parsed settings have the required properties
+            if (typeof parsed === 'object' &&
+                parsed !== null &&
+                typeof parsed.peoplePerGroup === 'number' &&
+                typeof parsed.separateGenders === 'boolean' &&
+                typeof parsed.requireLeader === 'boolean') {
+                storedSettings = parsed;
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to parse stored group settings:', e);
+    }
+}
 
 export const groupSettings = writable<GroupSettings>(storedSettings || {
     peoplePerGroup: 3,

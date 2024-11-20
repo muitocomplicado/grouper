@@ -57,6 +57,12 @@
         gender = person.gender;
         familyNumber = person.familyNumber?.toString() ?? '';
         isLeader = person.isLeader;
+        // isMissing status is preserved in the person object and doesn't need form controls
+        
+        // Focus the name input after a short delay to ensure the DOM is ready
+        setTimeout(() => {
+            nameInput?.focus();
+        }, 0);
     }
 
     export function resetForm() {
@@ -119,7 +125,8 @@
                 name: name.trim(),
                 gender,
                 familyNumber: familyNumber && parseInt(familyNumber) > 0 ? parseInt(familyNumber) : undefined,
-                isLeader
+                isLeader,
+                isMissing: false
             };
             people.update(p => [...p, newPerson]);
             name = '';

@@ -3,10 +3,11 @@
     import PersonList from '$lib/components/PersonList.svelte';
     import GroupSettings from '$lib/components/GroupSettings.svelte';
     import GroupDisplay from '$lib/components/GroupDisplay.svelte';
-    import CopyGroupsFooter from '$lib/components/CopyGroupsFooter.svelte';
+    import CopyGroups from '$lib/components/CopyGroups.svelte';
 
-    import { people } from '$lib/stores';
+    import { people, groups, groupSettings } from '$lib/stores';
     import { goto } from '$app/navigation';
+    import { formatGroupsAsText } from '$lib/utils/formatGroups';
 
     import { onMount } from 'svelte';
     let isKeyboardOpen = false;
@@ -28,6 +29,20 @@
 
     let personForm: PersonForm;
     let showGroups = false;
+    let buttonText = "Copiar Grupos";
+
+    async function copyGroupsToClipboard() {
+        const text = formatGroupsAsText($groups, $groupSettings.requireLeader);
+        try {
+            await navigator.clipboard.writeText(text);
+            buttonText = "Copiado";
+            setTimeout(() => {
+                buttonText = "Copiar Grupos";
+            }, 2000);
+        } catch (error) {
+            console.error("Failed to copy text:", error);
+        }
+    }
 
     function startGroupGeneration() {
         showGroups = true;
@@ -61,9 +76,9 @@
                 disabled={$people.length < 2}
             >
                 <span>Grupos</span>
-                {#if $people.length > 0}
+                {#if $people.filter(p => !p.isMissing).length > 0}
                     <span class="bg-white/20 dark:bg-black/20 px-2 py-1 rounded text-sm whitespace-nowrap">
-                        {$people.length} pessoa{$people.length > 1 ? 's' : ''}
+                        {$people.filter(p => !p.isMissing).length} pessoa{$people.filter(p => !p.isMissing).length > 1 ? 's' : ''}
                     </span>
                 {/if}
             </button>
@@ -74,7 +89,17 @@
     <div class="h-screen flex flex-col">
         <div class="container mx-auto px-4 max-w-lg flex-1 flex flex-col">
             <div class="sticky top-0 pt-4 pb-4 z-10 bg-white dark:bg-gray-900">
-                <GroupSettings on:back={() => showGroups = false} />
+                <GroupSettings>
+                    <div slot="copy-button">
+                        <button
+                            on:click={copyGroupsToClipboard}
+                            class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold whitespace-nowrap disabled:bg-gray-400 dark:disabled:bg-gray-600"
+                            disabled={!$groups || $groups.length === 0}
+                        >
+                            {buttonText}
+                        </button>
+                    </div>
+                </GroupSettings>
             </div>
             <div class="flex-1">
                 <div class="space-y-6">
@@ -83,7 +108,13 @@
             </div>
             {#if !isKeyboardOpen}
             <div class="sticky bottom-0 pt-4 pb-6 bg-white dark:bg-gray-900">
-                <CopyGroupsFooter />
+                <button
+                    type="button"
+                    on:click={() => showGroups = false}
+                    class="w-full px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 font-bold"
+                >
+                    Voltar
+                </button>
             </div>
             {/if}
         </div>

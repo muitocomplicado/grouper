@@ -10,6 +10,12 @@
         }
     }
 
+    function toggleMissing(id: string) {
+        people.update(p => p.map(person =>
+            person.id === id ? {...person, isMissing: !person.isMissing} : person
+        ));
+    }
+
     import type PersonForm from './PersonForm.svelte';
     export let personForm: PersonForm | undefined;
 
@@ -22,14 +28,20 @@
 
 <div class="space-y-1 pb-2">
     {#each [...$people].sort((a, b) => {
+        // Sort missing people to the bottom
+        if (a.isMissing && !b.isMissing) return 1;
+        if (!a.isMissing && b.isMissing) return -1;
+        // Then sort by leader status
         if (a.isLeader && !b.isLeader) return -1;
         if (!a.isLeader && b.isLeader) return 1;
+        // Finally sort by name
         return a.name.localeCompare(b.name);
     }) as person (person.id)}
         <div
             role="button"
             tabindex="0"
-            class="w-full text-left flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="w-full text-left flex items-center justify-between py-2 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            style={person.isMissing ? 'opacity: 0.5;' : ''}
             on:click={() => handlePersonClick(person)}
             on:keydown={(e) => e.key === 'Enter' && handlePersonClick(person)}
             aria-label={`Edit ${person.name}'s information`}
@@ -53,8 +65,24 @@
 
             <button
                 type="button"
+                on:click|stopPropagation={() => toggleMissing(person.id)}
+                class="ml-4 p-2 text-gray-400 hover:text-black dark:hover:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                aria-label={`Mark ${person.name} as ${person.isMissing ? 'present' : 'missing'}`}
+            >
+                {#if person.isMissing}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                {/if}
+            </button>
+            <button
+                type="button"
                 on:click|stopPropagation={() => removePerson(person.id)}
-                class="ml-4 text-red-600 hover:text-black dark:hover:text-white rounded"
+                class="ml-2 p-2 text-red-600 hover:text-black dark:hover:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                 aria-label={`Remove ${person.name}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

@@ -4,6 +4,7 @@ export type Person = {
     gender: 'M' | 'F';
     familyNumber?: number;
     isLeader: boolean;
+    isMissing?: boolean;
 };
 
 export type GroupSettings = {

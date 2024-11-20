@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
-    import { groupSettings, regenerateGroups, people } from '$lib/stores';
+    import { groupSettings, regenerateGroups, people, groups } from '$lib/stores';
     import { goto } from '$app/navigation';
 
     const dispatch = createEventDispatcher();
@@ -15,11 +15,13 @@
     function decrementPeoplePerGroup() {
         if (settings.peoplePerGroup > 2) {
             settings.peoplePerGroup--;
+            $groups = null;
         }
     }
 
     function incrementPeoplePerGroup() {
         settings.peoplePerGroup++;
+        $groups = null;
     }
 
     function handleInput(event: Event) {
@@ -28,6 +30,7 @@
         const numValue = parseInt(value) || 2;
         settings.peoplePerGroup = Math.max(2, numValue);
         input.value = settings.peoplePerGroup.toString();
+        $groups = null;
     }
 </script>
 
@@ -69,6 +72,7 @@
               <input
                   type="checkbox"
                   bind:checked={settings.separateGenders}
+                  on:change={() => $groups = null}
                   class="text-blue-600"
               />
               <span>Separado por sexo</span>
@@ -78,6 +82,7 @@
               <input
                   type="checkbox"
                   bind:checked={settings.requireLeader}
+                  on:change={() => $groups = null}
                   class="text-green-600"
                   disabled={!hasLeaders}
               />
@@ -88,20 +93,14 @@
         </div>
     </div>
 
-    <div class="mt-4 flex gap-2">
+    <div class="mt-4 grid grid-cols-2 gap-2">
         <button
             on:click={regenerateGroups}
-            class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
             disabled={$people.length < 2}
         >
             Gerar Grupos
         </button>
-        <button
-            type="button"
-            on:click={() => dispatch('back')}
-            class="px-6 py-3 font-bold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700"
-        >
-            Voltar
-        </button>
+        <slot name="copy-button" />
     </div>
 </div>
