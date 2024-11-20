@@ -40,17 +40,6 @@
         if (personForm) {
             personForm.resetForm();
         }
-
-        // Wait for the flip animation to complete before flashing
-        setTimeout(() => {
-            const row = element.closest('[data-person-id]');
-            if (row) {
-                row.classList.add('flash-highlight');
-                setTimeout(() => {
-                    row.classList.remove('flash-highlight');
-                }, 500);
-            }
-        }, 300); // Match the flip animation duration
     }
 
     import type PersonForm from './PersonForm.svelte';
@@ -79,7 +68,8 @@
             tabindex="0"
             data-person-id={person.id}
             class="w-full text-left flex items-center justify-between py-2 pl-4 pr-2 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-            style={person.isMissing ? 'opacity: 0.5;' : ''}
+            class:opacity-40={person.isMissing}
+            class:hover:opacity-100={person.isMissing}
             animate:flip={{ duration: 300 }}
             out:scale|local={{ duration: 200, start: 0.95, opacity: 0 }}
             on:click={() => handlePersonClick(person)}
