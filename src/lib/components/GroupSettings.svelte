@@ -2,6 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import { groupSettings, regenerateGroups, people, groups, isRegenerating } from '$lib/stores';
     import { goto } from '$app/navigation';
+    import CopyGroups from '$lib/components/CopyGroups.svelte';
 
     const dispatch = createEventDispatcher();
 
@@ -101,6 +102,6 @@
         >
             Gerar
         </button>
-        <slot name="copy-button" />
+        <CopyGroups/>
     </div>
 </div>

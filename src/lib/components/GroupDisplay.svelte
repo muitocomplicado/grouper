@@ -8,7 +8,7 @@
     {#each $groups as group (group.id)}
         <div
             class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
-            in:fly={{ x: 100, duration: 400, delay: group.id * 150 }}
+            in:fly={{ x: 100, duration: 200, delay: group.id * 150 }}
         >
             <h3 class="text-sm uppercase rounded mb-1 font-bold text-gray-400">{group.id}</h3>
             <ul class="space-y">

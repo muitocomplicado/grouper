@@ -4,7 +4,6 @@
     import PersonList from '$lib/components/PersonList.svelte';
     import GroupSettings from '$lib/components/GroupSettings.svelte';
     import GroupDisplay from '$lib/components/GroupDisplay.svelte';
-    import CopyGroups from '$lib/components/CopyGroups.svelte';
 
     import { people, groups, groupSettings } from '$lib/stores';
     import { goto } from '$app/navigation';
@@ -30,20 +29,6 @@
 
     let personForm: PersonForm;
     let showGroups = false;
-    let buttonText = "Copiar Grupos";
-
-    async function copyGroupsToClipboard() {
-        const text = formatGroupsAsText($groups, $groupSettings.requireLeader);
-        try {
-            await navigator.clipboard.writeText(text);
-            buttonText = "Copiado";
-            setTimeout(() => {
-                buttonText = "Copiar Grupos";
-            }, 2000);
-        } catch (error) {
-            console.error("Failed to copy text:", error);
-        }
-    }
 
     function startGroupGeneration() {
         showGroups = true;
@@ -63,17 +48,7 @@
                 </div>
             {:else}
                 <div in:fly={{ y: -50, duration: 300 }}>
-                    <GroupSettings>
-                        <div slot="copy-button">
-                            <button
-                                on:click={copyGroupsToClipboard}
-                                class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold whitespace-nowrap disabled:bg-gray-400 dark:disabled:bg-gray-600"
-                                disabled={!$groups || $groups.length === 0}
-                            >
-                                {buttonText}
-                            </button>
-                        </div>
-                    </GroupSettings>
+                    <GroupSettings/>
                 </div>
             {/if}
         </div>
