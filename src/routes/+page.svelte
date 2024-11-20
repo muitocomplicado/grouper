@@ -97,9 +97,9 @@
                         <button
                             type="button"
                             on:click={() => showGroups = false}
-                            class="w-full px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 font-bold"
+                            class="w-full px-6 py-3 font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                         >
-                            Voltar
+                            Lista de Pessoas
                         </button>
                     </div>
                 {/if}
