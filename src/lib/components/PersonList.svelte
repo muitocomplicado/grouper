@@ -1,5 +1,7 @@
 <script lang="ts">
     import { people } from '$lib/stores';
+    import { flip } from 'svelte/animate';
+    import { scale } from 'svelte/transition';
     import type { Person } from '$lib/types';
     import { getFamilyNumberColor } from '$lib/utils/colors';
 
@@ -14,6 +16,9 @@
         people.update(p => p.map(person =>
             person.id === id ? {...person, isMissing: !person.isMissing} : person
         ));
+        if (personForm) {
+            personForm.resetForm();
+        }
     }
 
     import type PersonForm from './PersonForm.svelte';
@@ -42,6 +47,8 @@
             tabindex="0"
             class="w-full text-left flex items-center justify-between py-2 px-4 bg-white dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             style={person.isMissing ? 'opacity: 0.5;' : ''}
+            animate:flip={{ duration: 300 }}
+            out:scale|local={{ duration: 200, start: 0.95, opacity: 0 }}
             on:click={() => handlePersonClick(person)}
             on:keydown={(e) => e.key === 'Enter' && handlePersonClick(person)}
             aria-label={`Edit ${person.name}'s information`}
