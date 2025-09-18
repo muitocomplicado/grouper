@@ -2,7 +2,7 @@
 
 # Grouper Deployment Script
 # Updates version in package.json, builds the project, and commits/pushes changes
-# Usage: ./build.sh [major|minor|patch]
+# Usage: ./deploy.sh [major|minor|patch]
 # Default: patch
 
 set -e

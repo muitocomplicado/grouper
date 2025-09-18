@@ -9,7 +9,7 @@
 - `npm run check:watch` - Type checking in watch mode
 - `npm run format` - Format code with Prettier
 - `npm run lint` - Check code formatting
-- `./build.sh [major|minor|patch]` - Deploy script: bumps version, builds, commits, and pushes
+- `./deploy.sh [major|minor|patch]` - Deploy script: bumps version, builds, commits, and pushes
 
 ## Code Style Guidelines
 
