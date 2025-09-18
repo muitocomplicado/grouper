@@ -78,6 +78,10 @@ echo "🔄 Updating package.json with new version..."
 sed -i.bak "s/\"version\": *\"[^\"]*\"/\"version\": \"$NEW_VERSION\"/g" package.json
 rm -f package.json.bak
 
+# Update package-lock.json with new version
+echo "🔄 Updating package-lock.json with new version..."
+npm install --package-lock-only --silent
+
 # Build the project
 echo "🔨 Building the project..."
 if ! npm run build; then
