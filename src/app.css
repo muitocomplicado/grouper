@@ -3,7 +3,7 @@
 @import 'tailwindcss/utilities';
 
 @layer base {
-    html {
-        @apply antialiased;
-    }
+	html {
+		@apply antialiased;
+	}
 }

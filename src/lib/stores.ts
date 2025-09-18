@@ -1,10 +1,11 @@
-import { writable, get, derived } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { Person, GroupSettings, Group } from './types';
 
 // Initialize from localStorage or default values
-const storedPeople = typeof localStorage !== 'undefined'
-    ? JSON.parse(localStorage.getItem('groupPeople') || '[]')
-    : [];
+const storedPeople =
+	typeof localStorage !== 'undefined'
+		? JSON.parse(localStorage.getItem('groupPeople') || '[]')
+		: [];
 
 export const people = writable<Person[]>(storedPeople);
 
@@ -13,432 +14,406 @@ let initialGroups: Group[] = [];
 
 // Only load stored groups if the timestamp is recent (within last minute)
 if (typeof localStorage !== 'undefined') {
-    try {
-        const storedGroups = localStorage.getItem('groupList');
-        const lastSaveTime = parseInt(localStorage.getItem('groupListTimestamp') || '0');
-        const now = Date.now();
-        if (storedGroups && now - lastSaveTime < 15*60000) { // 15 minutes
-            initialGroups = JSON.parse(storedGroups);
-        }
-    } catch (e) {
-        console.warn('Failed to parse stored groups:', e);
-        initialGroups = [];
-    }
+	try {
+		const storedGroups = localStorage.getItem('groupList');
+		const lastSaveTime = parseInt(localStorage.getItem('groupListTimestamp') || '0');
+		const now = Date.now();
+		if (storedGroups && now - lastSaveTime < 15 * 60000) {
+			// 15 minutes
+			initialGroups = JSON.parse(storedGroups);
+		}
+	} catch (e) {
+		console.warn('Failed to parse stored groups:', e);
+		initialGroups = [];
+	}
 }
 
 export const groups = writable<Group[]>(initialGroups);
 export const isRegenerating = writable<boolean>(false);
 
-// Subscribe to changes and update localStorage
-people.subscribe(value => {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('groupPeople', JSON.stringify(value));
-    }
-});
-
 // Keep track of initial load
 let isInitialLoad = true;
 
-// Create a derived store to reset groups when people change
-const peopleChangeEffect = derived(people, ($people, set) => {
-    if (!isInitialLoad) {
-        groups.set([]);
-    }
-    isInitialLoad = false;
+// Subscribe to changes and update localStorage; also clear groups after first change
+people.subscribe((value) => {
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('groupPeople', JSON.stringify(value));
+	}
+	if (!isInitialLoad) {
+		groups.set([]);
+	}
+	isInitialLoad = false;
 });
 
-// Subscribe to the derived store to make it active
-peopleChangeEffect.subscribe(() => {});
-
 // Subscribe to groups changes and update localStorage with timestamp
-groups.subscribe(value => {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('groupList', JSON.stringify(value));
-        localStorage.setItem('groupListTimestamp', Date.now().toString());
-    }
+groups.subscribe((value) => {
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('groupList', JSON.stringify(value));
+		localStorage.setItem('groupListTimestamp', Date.now().toString());
+	}
 });
 
 function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] {
-    if (peopleList.length === 0) return [];
+	const candidates = peopleList.filter((p) => !p.isMissing);
+	if (candidates.length === 0) return [];
 
-    // Start with a completely random shuffle of non-missing people
-    let availablePeople = [...peopleList]
-        .filter(p => !p.isMissing)
-        .sort(() => Math.random() - 0.5);
+	let groupId = 1;
+	const builtGroups: Group[] = [];
 
-    if (availablePeople.length === 0) return [];
+	function shuffle<T>(arr: T[]): T[] {
+		return [...arr].sort(() => Math.random() - 0.5);
+	}
 
-    const groups: Group[] = [];
-    let groupId = 1;
+	function pickCandidateIndex(
+		avail: Person[],
+		group: Group,
+		opts: {
+			allowFamilyDiversification: boolean;
+			preferNonLeaderWhenHasLeader: boolean;
+			targetGender?: 'M' | 'F';
+		}
+	): number {
+		let indices = avail.map((_, i) => i);
 
-    // If separating genders, calculate groups differently
-    let possibleGroups;
-    if (settings.separateGenders) {
-        const maleGroups = Math.floor(availablePeople.filter(p => p.gender === 'M').length / settings.peoplePerGroup);
-        const femaleGroups = Math.floor(availablePeople.filter(p => p.gender === 'F').length / settings.peoplePerGroup);
-        possibleGroups = maleGroups + femaleGroups;
+		if (opts.targetGender) {
+			const byGender = indices.filter((i) => avail[i].gender === opts.targetGender);
+			if (byGender.length > 0) indices = byGender;
+		}
 
-        // If leaders are required, check leaders by gender
-        if (settings.requireLeader) {
-            const malePeopleWithLeaders = availablePeople.filter(p => p.gender === 'M' && p.isLeader).length;
-            const femalePeopleWithLeaders = availablePeople.filter(p => p.gender === 'F' && p.isLeader).length;
-            possibleGroups = Math.min(possibleGroups, malePeopleWithLeaders + femalePeopleWithLeaders);
-        }
-    } else {
-        // Original logic for mixed groups
-        possibleGroups = Math.floor(availablePeople.length / settings.peoplePerGroup);
-        if (settings.requireLeader) {
-            const availableLeaders = availablePeople.filter(p => p.isLeader).length;
-            possibleGroups = Math.min(possibleGroups, availableLeaders);
-        }
-    }
+		if (opts.preferNonLeaderWhenHasLeader) {
+			const nonLeader = indices.filter((i) => !avail[i].isLeader);
+			if (nonLeader.length > 0) indices = nonLeader;
+		}
 
-    // Count total males and females (for mixed groups)
-    const totalMales = availablePeople.filter(p => p.gender === 'M').length;
-    const totalFemales = availablePeople.filter(p => p.gender === 'F').length;
-    const minorityGender: 'M' | 'F' = totalMales <= totalFemales ? 'M' : 'F';
+		if (opts.allowFamilyDiversification) {
+			const existingFamilies = new Set<number>();
+			for (const m of group.members) {
+				if (m.familyNumber !== undefined) existingFamilies.add(m.familyNumber);
+			}
+			const differentFamily = indices.filter(
+				(i) =>
+					avail[i].familyNumber === undefined ||
+					!existingFamilies.has(avail[i].familyNumber as number)
+			);
+			if (differentFamily.length > 0) {
+				indices = differentFamily;
+			} else if (existingFamilies.size > 0) {
+				// If we have existing families in the group and no one from different family is available,
+				// return -1 to indicate no valid candidate
+				return -1;
+			}
+		}
 
-    // Only create groups if we can make at least one full-sized group
-    if (possibleGroups > 0) {
-        // First phase: Create all groups and add leaders if required
-        for (let i = 0; i < possibleGroups; i++) {
-            const currentGroup: Person[] = [];
+		return indices.length > 0 ? indices[Math.floor(Math.random() * indices.length)] : -1;
+	}
 
-            // If we need a leader, find one first
-            if (settings.requireLeader) {
-                // If separating genders, try to distribute leaders evenly by gender
-                let leaderIndex = -1;
-                if (settings.separateGenders) {
-                    // Alternate between male and female leaders when possible
-                    const targetGender = i % 2 === 0 ? 'M' : 'F';
-                    leaderIndex = availablePeople.findIndex(p => p.isLeader && p.gender === targetGender);
-                    // If no leader of target gender, try the other gender
-                    if (leaderIndex === -1) {
-                        leaderIndex = availablePeople.findIndex(p => p.isLeader);
-                    }
-                } else {
-                    leaderIndex = availablePeople.findIndex(p => p.isLeader);
-                }
+	function fillLocalGroupsRoundRobin(
+		avail: Person[],
+		localGroups: Group[],
+		allowFamilyDiversification: boolean
+	): void {
+		while (avail.length > 0) {
+			const availableGroups = localGroups.filter((g) => g.members.length < settings.peoplePerGroup);
+			if (availableGroups.length === 0) break;
 
-                if (leaderIndex !== -1) {
-                    currentGroup.push(availablePeople.splice(leaderIndex, 1)[0]);
-                }
-            }
+			let filledAny = false;
+			for (const g of availableGroups) {
+				if (avail.length === 0) break;
 
-            groups.push({ id: groupId++, members: currentGroup });
-        }
+				let targetGender: 'M' | 'F' | undefined;
+				if (!settings.separateGenders) {
+					const malesInGroup = g.members.filter((p) => p.gender === 'M').length;
+					const femalesInGroup = g.members.filter((p) => p.gender === 'F').length;
+					const availM = avail.filter((p) => p.gender === 'M').length;
+					const availF = avail.filter((p) => p.gender === 'F').length;
 
-        // Second phase: Add one person of minority gender to each group
-        if (!settings.separateGenders) {
-            for (const group of groups) {
-                const minorityPersonIndex = availablePeople.findIndex(p => p.gender === minorityGender);
-                if (minorityPersonIndex !== -1) {
-                    group.members.push(availablePeople.splice(minorityPersonIndex, 1)[0]);
-                }
-            }
-        }
+					if (availM > 0 && availF > 0) {
+						if (malesInGroup < femalesInGroup) targetGender = 'M';
+						else if (femalesInGroup < malesInGroup) targetGender = 'F';
+						else targetGender = availM <= availF ? 'M' : 'F';
+					} else if (availM > 0) targetGender = 'M';
+					else if (availF > 0) targetGender = 'F';
+				}
 
-        // Third phase: Fill the remaining spots in each group
-        for (const group of groups) {
-            while (group.members.length < settings.peoplePerGroup && availablePeople.length > 0) {
-                let nextPerson: Person | undefined;
+				const idx = pickCandidateIndex(avail, g, {
+					allowFamilyDiversification,
+					preferNonLeaderWhenHasLeader: settings.requireLeader && g.members.some((m) => m.isLeader),
+					targetGender
+				});
+				if (idx >= 0) {
+					g.members.push(avail.splice(idx, 1)[0]);
+					filledAny = true;
+				}
+			}
+			if (!filledAny) break;
+		}
+	}
 
-                // If we're not separating genders
-                if (!settings.separateGenders) {
-                    // Count current genders in the group
-                    const malesInGroup = group.members.filter(p => p.gender === 'M').length;
-                    const femalesInGroup = group.members.filter(p => p.gender === 'F').length;
+	function processSingleGender(list: Person[], allowFamilyDiversification: boolean) {
+		let avail = shuffle(list);
+		if (avail.length === 0) return;
 
-                    // Count available genders
-                    const availableMales = availablePeople.filter(p => p.gender === 'M');
-                    const availableFemales = availablePeople.filter(p => p.gender === 'F');
+		let leaders = settings.requireLeader ? avail.filter((p) => p.isLeader) : [];
+		let groupCount = Math.floor(avail.length / settings.peoplePerGroup);
+		if (settings.requireLeader) groupCount = Math.min(groupCount, leaders.length);
 
-                    // Determine which gender to prioritize
-                    let priorityGender: 'M' | 'F' | null = null;
+		const localGroups: Group[] = [];
+		for (let i = 0; i < groupCount; i++) {
+			const g: Group = { id: groupId++, members: [] };
+			if (settings.requireLeader) {
+				const leaderIndex = Math.floor(Math.random() * leaders.length);
+				const leader = leaders.splice(leaderIndex, 1)[0];
+				avail = avail.filter((p) => p.id !== leader.id);
+				g.members.push(leader);
+			}
+			builtGroups.push(g);
+			localGroups.push(g);
+		}
 
-                    if (availableMales.length > 0 && availableFemales.length > 0) {
-                        // If both genders are available, choose the less represented one in the current group
-                        if (malesInGroup < femalesInGroup) {
-                            priorityGender = 'M';
-                        } else if (femalesInGroup < malesInGroup) {
-                            priorityGender = 'F';
-                        } else {
-                            // If equal, prioritize the gender with fewer total people available
-                            priorityGender = availableMales.length <= availableFemales.length ? 'M' : 'F';
-                        }
-                    }
+		fillLocalGroupsRoundRobin(avail, localGroups, allowFamilyDiversification);
 
-                    const eligiblePeople = availablePeople.filter(p =>
-                        // First, try to find someone from a different family
-                        !group.members.some(m =>
-                            m.familyNumber !== undefined &&
-                            m.familyNumber === p.familyNumber
-                        ) &&
-                        // And of the priority gender if one was determined
-                        (priorityGender === null || p.gender === priorityGender)
-                    );
+		// First, try to distribute remainders to existing groups (allowing them to exceed peoplePerGroup)
+		while (avail.length > 0) {
+			let placedSomeone = false;
+			const targets = [...localGroups].sort((a, b) => a.members.length - b.members.length);
+			if (targets.length === 0) break;
 
-                    if (eligiblePeople.length > 0) {
-                        const randomIndex = Math.floor(Math.random() * eligiblePeople.length);
-                        nextPerson = eligiblePeople[randomIndex];
-                    } else {
-                        // If no eligible people found, try just different family
-                        const differentFamilyPeople = availablePeople.filter(p =>
-                            !group.members.some(m =>
-                                m.familyNumber !== undefined &&
-                                m.familyNumber === p.familyNumber
-                            )
-                        );
+			// Try each person against each group until we find a valid placement
+			for (let personIdx = 0; personIdx < avail.length && !placedSomeone; personIdx++) {
+				for (const group of targets) {
+					const tempAvail = [avail[personIdx]];
+					const idx = pickCandidateIndex(tempAvail, group, {
+						allowFamilyDiversification,
+						preferNonLeaderWhenHasLeader:
+							settings.requireLeader && group.members.some((m) => m.isLeader)
+					});
+					if (idx >= 0) {
+						group.members.push(avail.splice(personIdx, 1)[0]);
+						placedSomeone = true;
+						break;
+					}
+				}
+			}
 
-                        if (differentFamilyPeople.length > 0) {
-                            const randomIndex = Math.floor(Math.random() * differentFamilyPeople.length);
-                            nextPerson = differentFamilyPeople[randomIndex];
-                        } else {
-                            // Last resort: just pick someone randomly
-                            const randomIndex = Math.floor(Math.random() * availablePeople.length);
-                            nextPerson = availablePeople[randomIndex];
-                        }
-                    }
-                } else {
-                    // If separateGenders is true, determine the target gender for this group
-                    let targetGender: 'M' | 'F';
-                    if (group.members.length > 0) {
-                        // Use existing group members' gender
-                        targetGender = group.members[0].gender;
-                    } else {
-                        // For empty groups, use the gender that has more available people
-                        const availableMales = availablePeople.filter(p => p.gender === 'M').length;
-                        const availableFemales = availablePeople.filter(p => p.gender === 'F').length;
-                        targetGender = availableMales >= availableFemales ? 'M' : 'F';
-                    }
-                    // First try to find someone from a different family
-                    const eligiblePeople = availablePeople.filter(p =>
-                        p.gender === targetGender &&
-                        !group.members.some(m =>
-                            m.familyNumber !== undefined &&
-                            m.familyNumber === p.familyNumber
-                        )
-                    );
+			if (!placedSomeone) {
+				break; // No one can be placed in any existing group
+			}
+		}
 
-                    if (eligiblePeople.length > 0) {
-                        const randomIndex = Math.floor(Math.random() * eligiblePeople.length);
-                        nextPerson = eligiblePeople[randomIndex];
-                    } else {
-                        // If no eligible people found, just pick someone of the same gender
-                        const sameGenderPeople = availablePeople.filter(p => p.gender === targetGender);
-                        if (sameGenderPeople.length > 0) {
-                            const randomIndex = Math.floor(Math.random() * sameGenderPeople.length);
-                            nextPerson = sameGenderPeople[randomIndex];
-                        }
-                    }
-                }
-                if (nextPerson) {
-                    group.members.push(nextPerson);
-                    availablePeople = availablePeople.filter(p => p.id !== nextPerson!.id);
-                } else {
-                    break;
-                }
-            }
-        }
+		// Only create new groups for people who couldn't be placed anywhere
+		while (avail.length > 0) {
+			if (!settings.requireLeader || avail.some((p) => p.isLeader)) {
+				const g: Group = { id: groupId++, members: [] };
+				if (settings.requireLeader) {
+					const li = avail.findIndex((p) => p.isLeader);
+					g.members.push(avail.splice(li, 1)[0]);
+				}
 
-        // Handle remaining people
-        if (availablePeople.length > 0) {
-            // Calculate minimum people needed for a new smaller group
-            const minPeopleForNewGroup = Math.ceil(settings.peoplePerGroup / 2) + 1;
+				// Fill this new group as much as possible
+				while (avail.length > 0) {
+					const idx = pickCandidateIndex(avail, g, {
+						allowFamilyDiversification,
+						preferNonLeaderWhenHasLeader:
+							settings.requireLeader && g.members.some((m) => m.isLeader)
+					});
+					if (idx >= 0) {
+						g.members.push(avail.splice(idx, 1)[0]);
+					} else {
+						break; // Can't place anyone else in this group
+					}
+				}
 
-            // Check if we have enough people for a new smaller group
-            if (availablePeople.length >= minPeopleForNewGroup) {
-                if (settings.separateGenders) {
-                    // Count remaining people by gender
-                    const remainingMales = availablePeople.filter(p => p.gender === 'M').length;
-                    const remainingFemales = availablePeople.filter(p => p.gender === 'F').length;
+				if (g.members.length > 0) {
+					builtGroups.push(g);
+					localGroups.push(g);
+				}
+			} else {
+				// No leaders available but leaders required, can't create more groups
+				break;
+			}
+		}
+	}
 
-                    // Check if we can form a valid gender group
-                    const canFormMaleGroup = remainingMales >= minPeopleForNewGroup;
-                    const canFormFemaleGroup = remainingFemales >= minPeopleForNewGroup;
+	function processMixed(list: Person[], allowFamilyDiversification: boolean) {
+		let avail = shuffle(list);
+		if (avail.length === 0) return;
 
-                    if (canFormMaleGroup || canFormFemaleGroup) {
-                        const targetGender = canFormMaleGroup ? 'M' : 'F';
+		let leaders = settings.requireLeader ? avail.filter((p) => p.isLeader) : [];
+		let groupCount = Math.floor(avail.length / settings.peoplePerGroup);
+		if (settings.requireLeader) groupCount = Math.min(groupCount, leaders.length);
 
-                        // If leaders required, check if we have one
-                        if (settings.requireLeader) {
-                            const hasLeader = availablePeople.some(p =>
-                                p.gender === targetGender && p.isLeader
-                            );
+		const localGroups: Group[] = [];
+		for (let i = 0; i < groupCount; i++) {
+			const g: Group = { id: groupId++, members: [] };
+			if (settings.requireLeader) {
+				const leaderIndex = Math.floor(Math.random() * leaders.length);
+				const leader = leaders.splice(leaderIndex, 1)[0];
+				avail = avail.filter((p) => p.id !== leader.id);
+				g.members.push(leader);
+			}
+			builtGroups.push(g);
+			localGroups.push(g);
+		}
 
-                            if (!hasLeader) {
-                                // Fallback to distributing across existing groups
-                                return distributeRemainingPeople();
-                            }
-                        }
+		fillLocalGroupsRoundRobin(avail, localGroups, allowFamilyDiversification);
 
-                        // Create new group
-                        const newGroup: Group = {
-                            id: groupId++,
-                            members: []
-                        };
+		// First, try to distribute remainders to existing groups (allowing them to exceed peoplePerGroup)
+		while (avail.length > 0) {
+			let placedSomeone = false;
+			const targets = [...localGroups].sort((a, b) => a.members.length - b.members.length);
+			if (targets.length === 0) break;
 
-                        // Add leader first if required
-                        if (settings.requireLeader) {
-                            const leaderIndex = availablePeople.findIndex(p =>
-                                p.gender === targetGender && p.isLeader
-                            );
-                            newGroup.members.push(availablePeople.splice(leaderIndex, 1)[0]);
-                        }
+			// Try each person against each group until we find a valid placement
+			for (let personIdx = 0; personIdx < avail.length && !placedSomeone; personIdx++) {
+				for (const group of targets) {
+					const tempAvail = [avail[personIdx]];
+					const idx = pickCandidateIndex(tempAvail, group, {
+						allowFamilyDiversification,
+						preferNonLeaderWhenHasLeader:
+							settings.requireLeader && group.members.some((m) => m.isLeader)
+					});
+					if (idx >= 0) {
+						group.members.push(avail.splice(personIdx, 1)[0]);
+						placedSomeone = true;
+						break;
+					}
+				}
+			}
 
-                        // Add remaining people of the same gender
-                        while (availablePeople.length > 0) {
-                            const personIndex = availablePeople.findIndex(p =>
-                                p.gender === targetGender
-                            );
-                            if (personIndex === -1) break;
-                            newGroup.members.push(availablePeople.splice(personIndex, 1)[0]);
-                        }
+			if (!placedSomeone) {
+				break; // No one can be placed in any existing group
+			}
+		}
 
-                        groups.push(newGroup);
-                    }
-                } else {
-                    // For mixed groups
-                    if (settings.requireLeader && !availablePeople.some(p => p.isLeader)) {
-                        // Fallback if we need a leader but don't have one
-                        return distributeRemainingPeople();
-                    }
+		// Only create new groups for people who couldn't be placed anywhere
+		while (avail.length > 0) {
+			if (!settings.requireLeader || avail.some((p) => p.isLeader)) {
+				const g: Group = { id: groupId++, members: [] };
+				if (settings.requireLeader) {
+					const li = avail.findIndex((p) => p.isLeader);
+					g.members.push(avail.splice(li, 1)[0]);
+				}
 
-                    // Create new mixed group
-                    const newGroup: Group = {
-                        id: groupId++,
-                        members: []
-                    };
+				// Fill this new group as much as possible
+				const tempLocal = [g];
+				fillLocalGroupsRoundRobin(avail, tempLocal, allowFamilyDiversification);
 
-                    // Add leader first if required
-                    if (settings.requireLeader) {
-                        const leaderIndex = availablePeople.findIndex(p => p.isLeader);
-                        newGroup.members.push(availablePeople.splice(leaderIndex, 1)[0]);
-                    }
+				if (g.members.length > 0) {
+					builtGroups.push(g);
+					localGroups.push(g);
+				}
+			} else {
+				// No leaders available but leaders required, can't create more groups
+				break;
+			}
+		}
+	}
 
-                    // Add remaining people maintaining gender balance if possible
-                    while (availablePeople.length > 0) {
-                        const malesInGroup = newGroup.members.filter(p => p.gender === 'M').length;
-                        const femalesInGroup = newGroup.members.filter(p => p.gender === 'F').length;
+	const byNetwork = settings.groupByNetwork;
+	const buckets = new Map<number, Person[]>();
+	for (const p of shuffle(candidates)) {
+		const key = byNetwork ? (p.familyNumber ?? 0) : -1;
+		if (!buckets.has(key)) buckets.set(key, []);
+		buckets.get(key)!.push(p);
+	}
 
-                        // Try to maintain balance
-                        const targetGender = malesInGroup < femalesInGroup ? 'M' : 'F';
-                        const personIndex = availablePeople.findIndex(p => p.gender === targetGender);
+	for (const [, bucketPeople] of buckets) {
+		if (settings.separateGenders) {
+			processSingleGender(
+				bucketPeople.filter((p) => p.gender === 'M'),
+				!byNetwork
+			);
+			processSingleGender(
+				bucketPeople.filter((p) => p.gender === 'F'),
+				!byNetwork
+			);
+		} else {
+			processMixed(bucketPeople, !byNetwork);
+		}
+	}
 
-                        if (personIndex !== -1) {
-                            newGroup.members.push(availablePeople.splice(personIndex, 1)[0]);
-                        } else {
-                            // If we can't find preferred gender, take anyone
-                            newGroup.members.push(availablePeople.shift()!);
-                        }
-                    }
-
-                    groups.push(newGroup);
-                }
-            }
-
-            // Distribute any remaining people across existing groups
-            return distributeRemainingPeople();
-        }
-
-        function distributeRemainingPeople() {
-            while (availablePeople.length > 0) {
-                const nextPerson = availablePeople[0];
-                if (settings.separateGenders) {
-                    const compatibleGroup = groups.find(g =>
-                        g.members.length > 0 && g.members[0].gender === nextPerson.gender
-                    );
-
-                    if (compatibleGroup) {
-                        compatibleGroup.members.push(availablePeople.shift()!);
-                    } else {
-                        // If no compatible group, create a new one
-                        const newGroup: Group = {
-                            id: groupId++,
-                            members: [availablePeople.shift()!]
-                        };
-                        groups.push(newGroup);
-                    }
-                } else {
-                    const sortedGroups = [...groups].sort((a, b) => a.members.length - b.members.length);
-                    sortedGroups[0].members.push(availablePeople.shift()!);
-                }
-            }
-            return groups;
-        }
-    }
-
-    return groups;
+	return builtGroups;
 }
 
 // Function to trigger group generation
 export async function regenerateGroups() {
-    const currentPeople = get(people);
-    const currentSettings = get(groupSettings);
+	const currentPeople = get(people);
+	const currentSettings = get(groupSettings);
 
-    isRegenerating.set(true);
-    groups.set([]);
+	isRegenerating.set(true);
+	groups.set([]);
 
-    // Validate settings
-    if (currentPeople.filter(p => !p.isMissing).length === 0) {
-        console.warn('No people available to generate groups');
-        return;
-    }
+	// Validate settings
+	if (currentPeople.filter((p) => !p.isMissing).length === 0) {
+		console.warn('No people available to generate groups');
+		return;
+	}
 
-    if (currentSettings.requireLeader && !currentPeople.filter(p => !p.isMissing).some(p => p.isLeader)) {
-        console.warn('Leaders required but no leaders available');
-        return;
-    }
+	if (
+		currentSettings.requireLeader &&
+		!currentPeople.filter((p) => !p.isMissing).some((p) => p.isLeader)
+	) {
+		console.warn('Leaders required but no leaders available');
+		return;
+	}
 
-    if (currentSettings.peoplePerGroup < 2) {
-        console.warn('Groups must have at least 2 people');
-        return;
-    }
+	if (currentSettings.peoplePerGroup < 2) {
+		console.warn('Groups must have at least 2 people');
+		return;
+	}
 
-    // Small delay to ensure animations reset
-    await new Promise(resolve => setTimeout(resolve, 50));
+	// Small delay to ensure animations reset
+	await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const newGroups = generateGroups(currentPeople, currentSettings);
-    groups.set(newGroups);
+	const newGroups = generateGroups(currentPeople, currentSettings);
+	groups.set(newGroups);
 
-    if (! newGroups || newGroups.length === 0) {
-      isRegenerating.set(false);
-    } else {
-      setTimeout(() => { isRegenerating.set(false); }, 400);
-    }
+	if (!newGroups || newGroups.length === 0) {
+		isRegenerating.set(false);
+	} else {
+		setTimeout(() => {
+			isRegenerating.set(false);
+		}, 400);
+	}
 }
 
 // Initialize groupSettings from localStorage or defaults
 let storedSettings: GroupSettings | null = null;
 
 if (typeof localStorage !== 'undefined') {
-    try {
-        const rawSettings = localStorage.getItem('groupSettings');
-        if (rawSettings) {
-            const parsed = JSON.parse(rawSettings);
-            // Validate the parsed settings have the required properties
-            if (typeof parsed === 'object' &&
-                parsed !== null &&
-                typeof parsed.peoplePerGroup === 'number' &&
-                typeof parsed.separateGenders === 'boolean' &&
-                typeof parsed.requireLeader === 'boolean') {
-                storedSettings = parsed;
-            }
-        }
-    } catch (e) {
-        console.warn('Failed to parse stored group settings:', e);
-    }
+	try {
+		const rawSettings = localStorage.getItem('groupSettings');
+		if (rawSettings) {
+			const parsed = JSON.parse(rawSettings);
+			// Validate the parsed settings have the required properties
+			if (
+				typeof parsed === 'object' &&
+				parsed !== null &&
+				typeof parsed.peoplePerGroup === 'number' &&
+				typeof parsed.separateGenders === 'boolean' &&
+				typeof parsed.requireLeader === 'boolean' &&
+				typeof parsed.groupByNetwork === 'boolean'
+			) {
+				storedSettings = parsed;
+			}
+		}
+	} catch (e) {
+		console.warn('Failed to parse stored group settings:', e);
+	}
 }
 
-export const groupSettings = writable<GroupSettings>(storedSettings || {
-    peoplePerGroup: 3,
-    separateGenders: false,
-    requireLeader: false,
-});
+export const groupSettings = writable<GroupSettings>(
+	storedSettings || {
+		peoplePerGroup: 3,
+		separateGenders: false,
+		requireLeader: false,
+		groupByNetwork: false
+	}
+);
 
 // Subscribe to changes and update localStorage
-groupSettings.subscribe(value => {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('groupSettings', JSON.stringify(value));
-    }
+groupSettings.subscribe((value) => {
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('groupSettings', JSON.stringify(value));
+	}
 });
