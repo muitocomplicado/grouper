@@ -115,7 +115,7 @@ git commit -m "$COMMIT_MSG"
 echo "🌐 Pushing to origin..."
 git push origin
 
-echo "✅ Build complete!"
+echo "✅ Deploy complete!"
 echo "   Version: ${CURRENT_VERSION} → ${NEW_VERSION} (${VERSION_TYPE})"
 echo "   Build output available in 'build' directory"
 echo "   Changes committed and pushed to origin"
