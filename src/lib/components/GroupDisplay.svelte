@@ -33,7 +33,7 @@
 
     {#if (!$groups || $groups.length === 0) && !$isRegenerating}
         <div class="text-center text-gray-500 py-8">
-            {#if $people.filter(p => !p.isMissing) < 2}
+            {#if $people.filter(p => !p.isMissing).length < 2}
                 Pelo menos duas pessoas são necessárias
             {:else if $groupSettings.requireLeader && !$people.filter(p => !p.isMissing).some(p => p.isLeader)}
                 Pelo menos um líder é necessário

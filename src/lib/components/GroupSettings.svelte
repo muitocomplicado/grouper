@@ -16,13 +16,13 @@
     function decrementPeoplePerGroup() {
         if (settings.peoplePerGroup > 2) {
             settings.peoplePerGroup--;
-            $groups = null;
+            $groups = [];
         }
     }
 
     function incrementPeoplePerGroup() {
         settings.peoplePerGroup++;
-        $groups = null;
+        $groups = [];
     }
 
     function handleInput(event: Event) {
@@ -31,7 +31,7 @@
         const numValue = parseInt(value) || 2;
         settings.peoplePerGroup = Math.max(2, numValue);
         input.value = settings.peoplePerGroup.toString();
-        $groups = null;
+        $groups = [];
     }
 </script>
 
@@ -73,7 +73,7 @@
               <input
                   type="checkbox"
                   bind:checked={settings.separateGenders}
-                  on:change={() => $groups = null}
+                  on:change={() => $groups = []}
                   class="text-blue-600"
               />
               <span>Separado por sexo</span>
@@ -83,7 +83,7 @@
               <input
                   type="checkbox"
                   bind:checked={settings.requireLeader}
-                  on:change={() => $groups = null}
+                  on:change={() => $groups = []}
                   class="text-green-600"
                   disabled={!hasLeaders}
               />

@@ -401,7 +401,7 @@ export async function regenerateGroups() {
     const newGroups = generateGroups(currentPeople, currentSettings);
     groups.set(newGroups);
 
-    if (! groups || groups.length === 0) {
+    if (! newGroups || newGroups.length === 0) {
       isRegenerating.set(false);
     } else {
       setTimeout(() => { isRegenerating.set(false); }, 400);

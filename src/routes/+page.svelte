@@ -1,38 +1,36 @@
 <script lang="ts">
-    import { slide, fly, fade } from 'svelte/transition';
-    import PersonForm from '$lib/components/PersonForm.svelte';
-    import PersonList from '$lib/components/PersonList.svelte';
-    import GroupSettings from '$lib/components/GroupSettings.svelte';
-    import GroupDisplay from '$lib/components/GroupDisplay.svelte';
-    import { getFamilyNumberColor } from '$lib/utils/colors';
-    import { people, groups, groupSettings } from '$lib/stores';
-    import { goto } from '$app/navigation';
-    import { formatGroupsAsText } from '$lib/utils/formatGroups';
+import { slide, fly, fade } from 'svelte/transition';
+import PersonForm from '$lib/components/PersonForm.svelte';
+import PersonList from '$lib/components/PersonList.svelte';
+import GroupSettings from '$lib/components/GroupSettings.svelte';
+import GroupDisplay from '$lib/components/GroupDisplay.svelte';
+import { getFamilyNumberColor } from '$lib/utils/colors';
+import { people } from '$lib/stores';
 
-    import { onMount } from 'svelte';
-    let isKeyboardOpen = false;
-    let initialWindowHeight;
+import { onMount } from 'svelte';
+let isKeyboardOpen = false;
+let initialWindowHeight: number;
 
-    onMount(() => {
-        initialWindowHeight = window.innerHeight;
-        const checkKeyboard = () => {
-            // If window height is significantly smaller than initial height,
-            // keyboard is likely open (using 150px as threshold)
-            isKeyboardOpen = window.innerHeight < initialWindowHeight - 150;
-        };
+onMount(() => {
+    initialWindowHeight = window.innerHeight;
+    const checkKeyboard = () => {
+        // If window height is significantly smaller than initial height,
+        // keyboard is likely open (using 150px as threshold)
+        isKeyboardOpen = window.innerHeight < initialWindowHeight - 150;
+    };
 
-        window.addEventListener('resize', checkKeyboard);
-        return () => {
-            window.removeEventListener('resize', checkKeyboard);
-        };
-    });
+    window.addEventListener('resize', checkKeyboard);
+    return () => {
+        window.removeEventListener('resize', checkKeyboard);
+    };
+});
 
-    let personForm: PersonForm;
-    let showGroups = false;
+let personForm: PersonForm;
+let showGroups = false;
 
-    function startGroupGeneration() {
-        showGroups = true;
-    }
+function startGroupGeneration() {
+    showGroups = true;
+}
 </script>
 
 <div class="h-screen flex flex-col" transition:slide={{ duration: 400, axis: 'y' }}>

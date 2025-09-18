@@ -126,7 +126,7 @@
         if (editingPerson) {
             // Update existing person
             people.update(p => p.map(person =>
-                person.id === editingPerson.id
+                person.id === editingPerson?.id
                     ? {
                         ...person,
                         name: name.trim(),
