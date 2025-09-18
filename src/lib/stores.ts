@@ -61,7 +61,12 @@ function generateGroups(peopleList: Person[], settings: GroupSettings): Group[] 
 	const builtGroups: Group[] = [];
 
 	function shuffle<T>(arr: T[]): T[] {
-		return [...arr].sort(() => Math.random() - 0.5);
+		const shuffled = [...arr];
+		for (let i = shuffled.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+		}
+		return shuffled;
 	}
 
 	function pickCandidateIndex(
